@@ -45,10 +45,10 @@ class TestMain:
     @pytest.mark.parametrize(
         "commands, exit_code, cwd, stdin, stdout, stderr",
         [
-            ("/usr/bin/true", 0, None, None, "", ""),
-            ("/usr/bin/false", 1, None, None, "", ""),
+            ("/usr/bin/env true", 0, None, None, "", ""),
+            ("/usr/bin/env false", 1, None, None, "", ""),
             ("/bin/echo foo", 0, None, None, "foo", ""),
-            ("/usr/bin/grep foo", 0, None, "foo", "foo", ""),
+            ("/usr/bin/env grep foo", 0, None, "foo", "foo", ""),
             ("/bin/pwd", 0, "/tmp", None, "/tmp", ""),
             (
                 "/bin/cat /yisohwo0AhK8Ah ",
@@ -58,8 +58,8 @@ class TestMain:
                 "",
                 "/bin/cat: /yisohwo0AhK8Ah: No such file or directory",
             ),
-            (["/bin/echo foo", "/usr/bin/grep foo"], 0, None, None, "foo", ""),
-            (["/bin/echo foo", "/usr/bin/grep bar"], 1, None, None, "", ""),
+            (["/bin/echo foo", "/usr/bin/env grep foo"], 0, None, None, "foo", ""),
+            (["/bin/echo foo", "/usr/bin/env grep bar"], 1, None, None, "", ""),
         ],
     )
     def test_run_pipe_exec(self, commands, exit_code, cwd, stdin, stdout, stderr):
