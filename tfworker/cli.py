@@ -33,7 +33,6 @@ DEFAULT_S3_BUCKET = "tfworker-terraform-states"
 DEFAULT_S3_PREFIX = "terraform/state/{deployment}"
 DEFAULT_AWS_REGION = "us-west-2"
 DEFAULT_GCP_REGION = "us-west2b"
-DEFAULT_BACKEND = "s3"
 DEFAULT_BACKEND_REGION = "us-west-2"
 DEFAULT_TERRFORM = "/usr/local/bin/terraform"
 
@@ -129,7 +128,6 @@ def validate_host():
 )
 @click.option(
     "--backend",
-    default=DEFAULT_BACKEND,
     required=True,
     type=click.Choice(['s3', 'gcs']),
     help="State/locking provider. One of: s3, gcs",
