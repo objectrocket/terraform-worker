@@ -129,9 +129,9 @@ def validate_host():
 )
 @click.option(
     "--backend",
-    case_sensitive=False,
     default=DEFAULT_BACKEND,
-    type=click.Choice(['s3', 'gcs'],
+    required=True,
+    type=click.Choice(['s3', 'gcs']),
     help="State/locking provider. One of: s3, gcs",
 )
 @click.option(
