@@ -248,7 +248,7 @@ def render_backend_gcs(name, deployment, args):
     state_config.append("terraform {")
     state_config.append('  backend "gcs" {')
     state_config.append('    bucket = "{}"'.format(args.gcp_bucket))
-    state_config.append('    prefix = "{}"'.format(args.gcp_prefix))
+    state_config.append('    prefix = "{}/{}"'.format(args.gcp_prefix, name))
     if hasattr(args, "gcp_creds_path") and args.gcp_creds_path:
         state_config.append('    credentials = "{}"'.format(args.gcp_creds_path))
     state_config.append("  }")
@@ -293,7 +293,7 @@ def render_backend_data_source_gcs(definitions, exclude, args):
         remote_data_config.append('  backend = "gcs"')
         remote_data_config.append("  config = {")
         remote_data_config.append('    bucket = "{}"'.format(args.gcp_bucket))
-        remote_data_config.append('    prefix = "{}"'.format(args.gcp_prefix))
+        remote_data_config.append('    prefix = "{}/{}"'.format(args.gcp_prefix, name))
         if hasattr(args, "gcp_creds_path") and args.gcp_creds_path:
             remote_data_config.append('    credentials = "{}"'.format(args.gcp_creds_path))
         remote_data_config.append("  }")

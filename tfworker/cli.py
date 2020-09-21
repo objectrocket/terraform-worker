@@ -14,7 +14,6 @@
 # limitations under the License.
 
 
-import copy
 import os
 import struct
 
@@ -95,7 +94,6 @@ def validate_host():
     help="The AWS/Boto3 profile to use",
     default=None,
 )
-
 @click.option(
     "--gcp-region",
     envvar="GCP_REGION",
@@ -115,7 +113,6 @@ def validate_host():
     help="GCP project name to which work will be applied",
     default=None,
 )
-
 @click.option(
     "--config-file", default=DEFAULT_CONFIG, envvar="WORKER_CONFIG_FILE", required=True
 )
@@ -182,8 +179,8 @@ def clean(
     if s3_prefix == DEFAULT_S3_PREFIX:
         s3_prefix = DEFAULT_S3_PREFIX.format(deployment=deployment)
 
-    if prefix == DEFAULT_GCP_PREFIX:
-        prefix = DEFAULT_GCP_PREFIX.format(deployment=deployment)
+    if gcp_prefix == DEFAULT_GCP_PREFIX:
+        gcp_prefix = DEFAULT_GCP_PREFIX.format(deployment=deployment)
 
     obj.clean = clean
     obj.add_arg("gcp_bucket", gcp_bucket)
@@ -323,7 +320,7 @@ def terraform(
 
     # TODO(jwiles): Where to ut this?  In the aws_config object? One backend render?
     # Create locking table for aws backend
-    if obj.args.state_provider == tf.Backends.s3:
+    if obj.args.backend == tf.Backends.s3:
         create_table(
             "terraform-{}".format(deployment),
             _aws_config.backend_region,

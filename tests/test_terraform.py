@@ -86,7 +86,7 @@ class TestTerraform:
         expected_render = """terraform {
   backend "gcs" {
     bucket = "test_gcp_bucket"
-    prefix = "terraform/test-0002"
+    prefix = "terraform/test-0002/test"
   }
 }"""
         assert render == expected_render
@@ -114,7 +114,7 @@ class TestTerraform:
   backend = "gcs"
   config = {
     bucket = "test_gcp_bucket"
-    prefix = "terraform/test-0002"
+    prefix = "terraform/test-0002/test"
   }
 }
 """
