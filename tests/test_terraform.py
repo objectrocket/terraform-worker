@@ -44,7 +44,6 @@ class TestTerraform:
         assert os.path.isfile(state.temp_dir + "/definitions/test/terraform.tf")
         assert os.path.isfile(state.temp_dir + "/definitions/test/worker.auto.tfvars")
 
-    @pytest.mark.skip()
     def test_plugin_download(self, state):
         tfworker.terraform.download_plugins({"aws": {"version": "1.9.0"}}, state.temp_dir)
         files = glob.glob(
