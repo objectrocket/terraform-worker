@@ -321,22 +321,22 @@ def terraform(
     # configuration for AWS interactions
     _aws_config = get_aws_config(obj, deployment)
 
+    # TODO(jwiles): Where to ut this?  In the aws_config object? One backend render?
+    # Create locking table for aws backend
+    if obj.args.state_provider == tf.Backends.s3:
+        create_table(
+            "terraform-{}".format(deployment),
+            _aws_config.backend_region,
+            _aws_config.key_id,
+            _aws_config.key_secret,
+            _aws_config.session_token,
+        )
+
     if tf.Providers.aws in providers:
         obj.add_arg(
             "aws_account_id",
             get_aws_id(_aws_config.key_id, _aws_config.key_secret, _aws_config.session_token),
         )
-
-        # TODO(jwiles): Where to ut this?  In the aws_config object? One backend render?
-        # Create locking table for aws backend
-        if obj.args.state_provider == tf.Backends.s3:
-            create_table(
-                "terraform-{}".format(deployment),
-                _aws_config.backend_region,
-                _aws_config.key_id,
-                _aws_config.key_secret,
-                _aws_config.session_token,
-            )
 
     if tf.Providers.google in providers:
         obj.add_arg("gcp_bucket", gcp_bucket)
