@@ -90,6 +90,7 @@ class TestTerraform:
   backend "gcs" {
     bucket = "test_gcp_bucket"
     prefix = "terraform/test-0002/test"
+    credentials = "/home/test/test-creds.json"
   }
 }"""
         assert render == expected_render
@@ -118,6 +119,7 @@ class TestTerraform:
   config = {
     bucket = "test_gcp_bucket"
     prefix = "terraform/test-0002/test"
+    credentials = "/home/test/test-creds.json"
   }
 }
 """
@@ -127,6 +129,14 @@ class TestTerraform:
         render = tfworker.terraform.render_providers(providers, state.args)
         expected_render = """provider "aws" {
   version = "1.3.37"
+}"""
+        assert render == expected_render
+
+    def test_render_providers_google(self, google_provider, gcs_backend_state):
+        render = tfworker.terraform.render_providers(google_provider, gcs_backend_state.args)
+        expected_render = """provider "google" {
+  version = "3.38.0"
+  credentials = file("/home/test/test-creds.json")
 }"""
         assert render == expected_render
 
