@@ -74,7 +74,7 @@ def all_definitions():
 
 
 @pytest.fixture
-def providers():
+def aws_provider():
     prov_list = {"aws": {"vars": {"version": "1.3.37"}}}
     return prov_list
 

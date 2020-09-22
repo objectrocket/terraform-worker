@@ -125,14 +125,14 @@ class TestTerraform:
 """
         assert render == expected_render
 
-    def test_render_providers(self, providers, state):
-        render = tfworker.terraform.render_providers(providers, state.args)
+    def test_render_aws_provider(self, aws_provider, state):
+        render = tfworker.terraform.render_providers(aws_provider, state.args)
         expected_render = """provider "aws" {
   version = "1.3.37"
 }"""
         assert render == expected_render
 
-    def test_render_providers_google(self, google_provider, gcs_backend_state):
+    def test_render_google_provider(self, google_provider, gcs_backend_state):
         render = tfworker.terraform.render_providers(google_provider, gcs_backend_state.args)
         expected_render = """provider "google" {
   version = "3.38.0"
