@@ -132,7 +132,7 @@ def validate_host():
 @click.option(
     "--backend-region",
     default=DEFAULT_BACKEND_REGION,
-    help="AWS region where terraform state bucket exists",
+    help="Region where terraform state/lock bucket exists",
 )
 @click.pass_context
 def cli(context, **kwargs):
