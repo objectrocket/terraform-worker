@@ -16,13 +16,18 @@
 
 import os
 import struct
+import sys
 
 import click
 from tfworker import terraform as tf
+from tfworker.controller import TerraformController
 from tfworker.main import State, create_table, get_aws_id, get_platform
-from tfworker.providers import StateError
-from tfworker.providers.aws import (aws_config, clean_bucket_state,
-                                    clean_locking_state)
+from tfworker.providers.awsold import (
+    aws_config,
+    clean_bucket_state,
+    clean_locking_state,
+)
+from tfworker.providers import OldStateError
 
 DEFAULT_GCP_BUCKET = "tfworker-terraform-states"
 DEFAULT_CONFIG = "{}/worker.yaml".format(os.getcwd())
@@ -45,12 +50,13 @@ def validate_deployment(ctx, deployment, name):
 
 
 def validate_gcp_creds_path(ctx, path, value):
-    if not os.path.isabs(value):
-        value = os.path.abspath(value)
-    if os.path.isfile(value):
-        return value
-    click.secho(f"Could not resolve GCP credentials path: {value}", fg="red")
-    raise SystemExit(3)
+    if value:
+        if not os.path.isabs(value):
+            value = os.path.abspath(value)
+        if os.path.isfile(value):
+            return value
+        click.secho(f"Could not resolve GCP credentials path: {value}", fg="red")
+        raise SystemExit(3)
 
 
 def validate_host():
@@ -136,7 +142,9 @@ def validate_host():
     "--gcp-creds-path",
     required=False,
     envvar="GCP_CREDS_PATH",
-    help="Relative path to the credentials JSON file for the service account to be used.",
+    help=(
+        "Relative path to the credentials JSON file for the service account to be used."
+    ),
     default=None,
     callback=validate_gcp_creds_path,
 )
@@ -240,13 +248,13 @@ def clean(
                 clean_bucket_state(config, definition=limit_item)
                 # deployment name needs specified to determine the dynamo table
                 clean_locking_state(config, deployment, definition=limit_item)
-            except StateError as e:
+            except OldStateError as e:
                 click.secho("error deleting state: {}".format(e), fg="red")
                 raise SystemExit(1)
     else:
         try:
             clean_bucket_state(config)
-        except StateError as e:
+        except OldStateError as e:
             click.secho("error deleting state: {}".format(e))
             raise SystemExit(1)
         clean_locking_state(config, deployment)
@@ -309,7 +317,10 @@ def clean(
     "--b64-encode-hook-values/--no--b64-encode-hook-values",
     "b64_encode",
     default=False,
-    help="Terraform variables and outputs can be complex data structures, setting this open will base64 encode the values for use in hook scripts",
+    help=(
+        "Terraform variables and outputs can be complex data structures, setting this"
+        " open will base64 encode the values for use in hook scripts"
+    ),
 )
 @click.option("--limit", help="limit operations to a single definition", multiple=True)
 @click.argument("deployment", callback=validate_deployment)
@@ -496,37 +507,115 @@ def terraform(
             )
 
 
-def get_aws_config(obj, deployment):
-    """ returns an aws_config based on the paramenters sent to CLI """
-    # build params for aws_config based on inputs
+@cli.command()
+@click.option(
+    "--clean/--no-clean",
+    default=True,
+    help="clean up the temporary directory created by the worker after execution",
+)
+@click.option(
+    "--apply/--no-apply",
+    "tf_apply",
+    default=False,
+    help="apply the terraform configuration",
+)
+@click.option(
+    "--force-apply/--no-force-apply",
+    "force_apply",
+    default=False,
+    help="force apply without plan change",
+)
+@click.option(
+    "--destroy/--no-destroy",
+    default=False,
+    help="destroy a deployment instead of create it",
+)
+@click.option(
+    "--show-output/--no-show-output",
+    default=False,
+    help="shot output from terraform commands",
+)
+@click.option(
+    "--gcp-bucket",
+    default=DEFAULT_GCP_BUCKET,
+    help="The s3 bucket for storing terraform state",
+)
+@click.option(
+    "--gcp-prefix",
+    default=DEFAULT_GCP_PREFIX,
+    help="The prefix in the bucket for the definitions to use",
+)
+@click.option(
+    "--s3-bucket",
+    default=DEFAULT_S3_BUCKET,
+    help="The s3 bucket for storing terraform state",
+)
+@click.option(
+    "--s3-prefix",
+    default=DEFAULT_S3_PREFIX,
+    help="The prefix in the bucket for the definitions to use",
+)
+@click.option(
+    "--terraform-bin",
+    default=DEFAULT_TERRFORM,
+    help="The complate location of the terraform binary",
+)
+@click.option(
+    "--b64-encode-hook-values/--no--b64-encode-hook-values",
+    "b64_encode",
+    default=False,
+    help=(
+        "Terraform variables and outputs can be complex data structures, setting this"
+        " open will base64 encode the values for use in hook scripts"
+    ),
+)
+@click.option("--limit", help="limit operations to a single definition", multiple=True)
+@click.pass_obj
+def bugout(state, deployment="foobar", **kwargs):
+    """ No do nothing """
+    tfc = TerraformController(state)
 
-    config_args = dict()
-    if obj.args.aws_access_key_id is not None:
-        config_args["key_id"] = obj.args.aws_access_key_id
+    import pdb
 
-    if obj.args.aws_secret_access_key is not None:
-        config_args["key_secret"] = obj.args.aws_secret_access_key
+    pdb.set_trace()
+    print()
 
-    if obj.args.aws_session_token is not None:
-        config_args["session_token"] = obj.args.aws_session_token
+    if tf.Providers.aws in providers:
+        obj.add_arg(
+            "aws_account_id",
+            get_aws_id(
+                _aws_config.key_id, _aws_config.key_secret, _aws_config.session_token
+            ),
+        )
 
-    if obj.args.aws_profile is not None:
-        config_args["aws_profile"] = obj.args.aws_profile
+    if tf.Providers.google in providers:
+        obj.add_arg("gcp_bucket", kwargs.get("gcp_bucket"))
+        obj.add_arg("gcp_prefix", kwargs.get("gcp_prefix"))
 
-    if obj.args.aws_role_arn is not None:
-        config_args["role_arn"] = obj.args.aws_role_arn
+    click.secho("building deployment {}".format(deployment), fg="green")
+    click.secho("using temporary Directory: {}".format(obj.temp_dir), fg="yellow")
 
-    # TODO (jwiles): Do we need to optimize constructing this object for cases
-    # where aws is NOT the backend provider?
-    config = aws_config(
-        obj.args.aws_region,
-        obj.args.backend_region,
-        deployment,
-        obj.args.s3_bucket,
-        obj.args.s3_prefix,
-        **config_args,
-    )
-    return config
+    # common setup required for all definitions
+    click.secho("downloading plugins", fg="green")
+    tf.download_plugins(obj.config["terraform"]["plugins"], obj.temp_dir)
+    tf.prep_modules(obj.args.repository_path, obj.temp_dir)
+    tf_items = []
+
+    # setup tf_items to capture the limit/order based on options
+    if kwargs.get("destroy"):
+        for name, body in reversed(obj.config["terraform"]["definitions"].items()):
+            if kwargs.get("limit") and name not in kwargs.get("limit"):
+                continue
+            tf_items.append((name, body))
+        plan_for = "destroy"
+    else:
+        for name, body in obj.config["terraform"]["definitions"].items():
+            if kwargs.get("limit") and name not in kwargs.get("limit"):
+                continue
+            tf_items.append((name, body))
+
+    print(f"bugged out with: {plan_for}")
+    sys.exit(0)
 
 
 if __name__ == "__main__":

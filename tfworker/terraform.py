@@ -607,9 +607,8 @@ def get_state_item(working_dir, env, terraform_path, state, item):
 
     if stdout is None:
         raise HookError(
-            "Remote state item {}.{} is empty; This is completely unexpected, failing...".format(
-                state, item
-            )
+            "Remote state item {}.{} is empty; This is completely unexpected,"
+            " failing...".format(state, item)
         )
     json_output = json.loads(stdout)
     return json.dumps(json_output, indent=None, separators=(",", ":"))

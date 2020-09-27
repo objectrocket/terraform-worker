@@ -12,16 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from .aws import AWSProvider  # noqa
+from .base import UnknownProvider  # noqa
+from .google import GoogleProvider  # noqa
 
-class ProviderError(Exception):
+
+class OldProviderError(Exception):
     pass
 
 
-class StateError(Exception):
+class OldStateError(Exception):
     pass
 
 
-def validate_state_empty(state):
+def old_validate_state_empty(state):
     """
     validate_empty_state ensures that the provided state file
     is empty
@@ -36,7 +40,7 @@ def validate_state_empty(state):
         raise StateError("resources key does not exist in state!")
 
 
-def validate_backend_region(state):
+def old_validate_backend_region(state):
     """
     validate_backend_region validates that a statefile
     was previously used in the region the current
