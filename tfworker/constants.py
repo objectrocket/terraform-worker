@@ -1,5 +1,7 @@
 import os
 
+DEFAULT_BACKEND_BUCKET = "tfworker-terraform-states"
+DEFAULT_BACKEND_PREFIX = "terraform/state/{deployment}"
 DEFAULT_GCP_BUCKET = "tfworker-terraform-states"
 DEFAULT_CONFIG = "{}/worker.yaml".format(os.getcwd())
 DEFAULT_GCP_PREFIX = "terraform/state/{deployment}"

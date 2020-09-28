@@ -5,9 +5,10 @@ from tfworker import constants as const
 class GoogleProvider(BaseProvider):
     tag = "google"
 
-    def __init__(self, body, state, controller, *args, **kwargs):
+    def __init__(self, body, authenticators, *args, **kwargs):
         super(GoogleProvider, self).__init__(body, state)
 
+        self._authenticator = self.select_authenticator(authenticators)
         self.project = state.args.gcp_project or None
         self.creds_path = state.args.gcp_creds_path or None
         self.region = state.args.gcp_region or None
@@ -21,8 +22,3 @@ class GoogleProvider(BaseProvider):
 
         # configuration for AWS interactions
         _aws_config = z.providers["aws"].get_aws_config(deployment)
-
-        if kwargs.get("gcp_prefix") == const.DEFAULT_GCP_PREFIX:
-            self.gcp_prefix = const.DEFAULT_GCP_PREFIX.format(
-                deployment=kwargs.get("deployment")
-            )

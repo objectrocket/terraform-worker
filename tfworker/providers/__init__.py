@@ -17,6 +17,9 @@ from .base import UnknownProvider  # noqa
 from .google import GoogleProvider  # noqa
 
 
+ALL = [AWSProvider, GoogleProvider]
+
+
 class OldProviderError(Exception):
     pass
 
@@ -37,7 +40,7 @@ def old_validate_state_empty(state):
         else:
             return True
     except KeyError:
-        raise StateError("resources key does not exist in state!")
+        raise OldStateError("resources key does not exist in state!")
 
 
 def old_validate_backend_region(state):

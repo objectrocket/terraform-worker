@@ -4,57 +4,51 @@ from contextlib import closing
 import click
 from tfworker.providers import StateError, validate_state_empty
 
-from .base import BaseProvider, StateError, validate_state_empty
+from .base import BaseProvider, BackendError, validate_backend_empty
 from tfworker import constants as const
 
 
 class AWSProvider(BaseProvider):
     tag = "aws"
 
-    def __init__(self, body, state, controller, *args, **kwargs):
+    def __init__(self, body, authenticators, *args, **kwargs):
+        self._authenticator = self.select_authenticator(authenticators)
         self.version = body.get("vars", {}).get("version")
-        self.access_key_id = state.args.aws_access_key_id or None
-        self.secret_access_key = state.args.aws_secret_access_key or None
-        self.session_token = state.args.aws_session_token or None
-        self.region = (
-            body.get("vars", {}).get("region") or state.args.aws_region or None
-        )
-        self.s3_prefix = None
-
-        # If the default value is used, render the deployment name into it
-        if kwargs.get("s3_prefix") == const.DEFAULT_S3_PREFIX:
-            self.s3_prefix = const.DEFAULT_S3_PREFIX.format(
-                deployment=kwargs.get("deployment")
-            )
 
     # Provider-specific methods
     def clean_bucket_state(self, definition=None):
         """
         clean_state validates all of the terraform states are empty,
-        and then removes the state objects from S3
+        and then removes the backend objects from S3
 
         optionally definition can be passed to limit the cleanup
         to a single definition
         """
 
-        s3_paginator = self.state_session.client("s3").get_paginator("list_objects_v2")
-        s3_client = self.state_session.client("s3")
+        s3_paginator = self._authenticator.backend_session.client("s3").get_paginator(
+            "list_objects_v2"
+        )
+        s3_client = self._authenticator.backend_session.client("s3")
         if definition is None:
-            prefix = self.state_prefix
+            prefix = self._authenticator.backend_prefix
         else:
-            prefix = "{}/{}".format(self.state_prefix, definition)
+            prefix = "{}/{}".format(self._authenticator.backend_prefix, definition)
 
-        for s3_object in self.filter_keys(s3_paginator, self.state_bucket, prefix):
-            state_file = s3_client.get_object(Bucket=self.state_bucket, Key=s3_object)
-            body = state_file["Body"]
-            with closing(state_file["Body"]):
-                state = json.load(body)
+        for s3_object in self.filter_keys(
+            s3_paginator, self._authenticator.backend_bucket, prefix
+        ):
+            backend_file = s3_client.get_object(
+                Bucket=self._authenticator.backend_bucket, Key=s3_object
+            )
+            body = backend_file["Body"]
+            with closing(backend_file["Body"]):
+                backend = json.load(body)
 
-            if validate_state_empty(state):
+            if validate_backend_empty(backend):
                 self.delete_with_versions(s3_object)
-                click.secho("state file removed: {}".format(s3_object), fg="yellow")
+                click.secho("backend file removed: {}".format(s3_object), fg="yellow")
             else:
-                raise StateError("state at: {} is not empty!".format(s3_object))
+                raise BackendError("backend at: {} is not empty!".format(s3_object))
 
     def clean_locking_state(self, deployment, definition=None):
         """

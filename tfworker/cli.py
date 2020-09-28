@@ -20,6 +20,7 @@ import sys
 
 import click
 from tfworker import terraform as tf
+from tfworker import constants as const
 from tfworker.controller import TerraformController
 from tfworker.main import State, create_table, get_aws_id, get_platform
 from tfworker.providers.awsold import (
@@ -171,8 +172,18 @@ def validate_host():
     help="State/locking provider. One of: s3, gcs",
 )
 @click.option(
+    "--backend-bucket",
+    default=const.DEFAULT_BACKEND_BUCKET,
+    help="Region where terraform state/lock bucket exists",
+)
+@click.option(
+    "--backend-prefix",
+    default=const.DEFAULT_BACKEND_PREFIX,
+    help="Region where terraform state/lock bucket exists",
+)
+@click.option(
     "--backend-region",
-    default=DEFAULT_BACKEND_REGION,
+    default=const.DEFAULT_BACKEND_REGION,
     help="Region where terraform state/lock bucket exists",
 )
 @click.pass_context
@@ -534,26 +545,6 @@ def terraform(
     "--show-output/--no-show-output",
     default=False,
     help="shot output from terraform commands",
-)
-@click.option(
-    "--gcp-bucket",
-    default=DEFAULT_GCP_BUCKET,
-    help="The s3 bucket for storing terraform state",
-)
-@click.option(
-    "--gcp-prefix",
-    default=DEFAULT_GCP_PREFIX,
-    help="The prefix in the bucket for the definitions to use",
-)
-@click.option(
-    "--s3-bucket",
-    default=DEFAULT_S3_BUCKET,
-    help="The s3 bucket for storing terraform state",
-)
-@click.option(
-    "--s3-prefix",
-    default=DEFAULT_S3_PREFIX,
-    help="The prefix in the bucket for the definitions to use",
 )
 @click.option(
     "--terraform-bin",

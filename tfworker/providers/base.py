@@ -1,5 +1,8 @@
 class BaseProvider:
-    tag = "base"
+    tag = None
+
+    def select_authenticator(self, authenticators):
+        return filter(lambda a: a.tag == self.tag, authenticators)
 
 
 class UnknownProvider(Exception):
@@ -7,11 +10,11 @@ class UnknownProvider(Exception):
         super().__init__(f"{provider} is not a known value.")
 
 
-class StateError(Exception):
+class BackendError(Exception):
     pass
 
 
-def validate_state_empty(state):
+def validate_backend_empty(state):
     """
     validate_empty_state ensures that the provided state file
     is empty
@@ -23,7 +26,7 @@ def validate_state_empty(state):
         else:
             return True
     except KeyError:
-        raise StateError("resources key does not exist in state!")
+        raise BackendError("resources key does not exist in state!")
 
 
 def validate_backend_region(state):

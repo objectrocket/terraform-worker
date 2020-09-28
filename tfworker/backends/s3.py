@@ -5,18 +5,19 @@ from .base import BaseBackend, Backends
 
 
 class S3Backend(BaseBackend):
-    def __init__(self, state, *args, **kwargs):
+    def __init__(self, authenticators, *args, **kwargs):
+        self._authenticator = self.select_authenticator(authenticators)
         self.backend_region = None
         self.backend_prefix = None
 
         # Create locking table for aws backend
-        if state.args.backend == Backends.s3:
+        if self._authenticator.backend == Backends.s3:
             self.create_table(
                 "terraform-{}".format(kwargs.get("deployment")),
-                _aws_config.backend_region,
-                _aws_config.key_id,
-                _aws_config.key_secret,
-                _aws_config.session_token,
+                self._authenticator.backend_region,
+                self._authenticator.access_key_id,
+                self._authenticator.secret_access_token,
+                self._authenticator.session_token,
             )
 
     @staticmethod
