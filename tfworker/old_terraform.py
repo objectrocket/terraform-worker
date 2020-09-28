@@ -295,9 +295,7 @@ def render_backend_data_source_gcs(definitions, exclude, args):
         remote_data_config.append('    bucket = "{}"'.format(args.gcp_bucket))
         remote_data_config.append('    prefix = "{}/{}"'.format(args.gcp_prefix, name))
         if hasattr(args, "gcp_creds_path") and args.gcp_creds_path:
-            remote_data_config.append(
-                '    credentials = "{}"'.format(args.gcp_creds_path)
-            )
+            remote_data_config.append('    credentials = "{}"'.format(args.gcp_creds_path))
         remote_data_config.append("  }")
         remote_data_config.append("}\n")
     return "\n".join(remote_data_config)
@@ -320,12 +318,10 @@ def render_providers(providers, args):
             if '"' not in v:
                 prov_string.append('  {} = "{}"'.format(k, v))
             else:
-                prov_string.append("  {} = {}".format(k, v))
+                prov_string.append('  {} = {}'.format(k, v))
         if provider == Providers.google:
             if hasattr(args, "gcp_creds_path") and args.gcp_creds_path:
-                prov_string.append(
-                    '  credentials = file("{}")'.format(args.gcp_creds_path)
-                )
+                prov_string.append('  credentials = file("{}")'.format(args.gcp_creds_path))
         prov_string.append("}")
     return "\n".join(prov_string)
 
@@ -607,8 +603,9 @@ def get_state_item(working_dir, env, terraform_path, state, item):
 
     if stdout is None:
         raise HookError(
-            "Remote state item {}.{} is empty; This is completely unexpected,"
-            " failing...".format(state, item)
+            "Remote state item {}.{} is empty; This is completely unexpected, failing...".format(
+                state, item
+            )
         )
     json_output = json.loads(stdout)
     return json.dumps(json_output, indent=None, separators=(",", ":"))

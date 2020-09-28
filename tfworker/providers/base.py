@@ -1,8 +1,20 @@
+import json
+
+
 class BaseProvider:
     tag = None
 
-    def select_authenticator(self, authenticators):
-        return filter(lambda a: a.tag == self.tag, authenticators)
+    def __init__(self, body):
+        self.vars = body.get("vars", {})
+        self.version = self.vars.get("version")
+
+    def tfjson(self):
+        return json.dumps(
+            {"provider": {self.tag: self.vars}},
+            sort_keys=True,
+            indent=4,
+            separators=(",", ": "),
+        )
 
 
 class UnknownProvider(Exception):
@@ -16,7 +28,7 @@ class BackendError(Exception):
 
 def validate_backend_empty(state):
     """
-    validate_empty_state ensures that the provided state file
+    validate_backend_empty ensures that the provided state file
     is empty
     """
 

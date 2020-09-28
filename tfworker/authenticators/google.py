@@ -5,8 +5,8 @@ from tfworker import constants as const
 class GoogleAuthenticator(BaseAuthenticator):
     tag = "google"
 
-    def __init__(self, args):
-        super(GoogleAuthenticator, self).__init__(args)
+    def __init__(self, state_args, *args, **kwargs):
+        super(GoogleAuthenticator, self).__init__(state_args, *args, **kwargs)
 
         self.bucket = self._resolve_arg("backend_bucket")
         self.creds_path = self._resolve_arg("gcp_creds_path")

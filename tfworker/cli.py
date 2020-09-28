@@ -30,17 +30,6 @@ from tfworker.providers.awsold import (
 )
 from tfworker.providers import OldStateError
 
-DEFAULT_GCP_BUCKET = "tfworker-terraform-states"
-DEFAULT_CONFIG = "{}/worker.yaml".format(os.getcwd())
-DEFAULT_GCP_PREFIX = "terraform/state/{deployment}"
-DEFAULT_REPOSITORY_PATH = "{}".format(os.getcwd())
-DEFAULT_S3_BUCKET = "tfworker-terraform-states"
-DEFAULT_S3_PREFIX = "terraform/state/{deployment}"
-DEFAULT_AWS_REGION = "us-west-2"
-DEFAULT_GCP_REGION = "us-west2b"
-DEFAULT_BACKEND_REGION = "us-west-2"
-DEFAULT_TERRFORM = "/usr/local/bin/terraform"
-
 
 def validate_deployment(ctx, deployment, name):
     """Validate the deployment is an 8 char name."""
@@ -123,7 +112,7 @@ def validate_host():
 @click.option(
     "--aws-region",
     envvar="AWS_DEFAULT_REGION",
-    default=DEFAULT_AWS_REGION,
+    default=const.DEFAULT_AWS_REGION,
     help="AWS Region to build in",
 )
 @click.option(
@@ -136,7 +125,7 @@ def validate_host():
 @click.option(
     "--gcp-region",
     envvar="GCP_REGION",
-    default=DEFAULT_GCP_REGION,
+    default=const.DEFAULT_GCP_REGION,
     help="Region to build in",
 )
 @click.option(
@@ -156,11 +145,14 @@ def validate_host():
     default=None,
 )
 @click.option(
-    "--config-file", default=DEFAULT_CONFIG, envvar="WORKER_CONFIG_FILE", required=True
+    "--config-file",
+    default=const.DEFAULT_CONFIG,
+    envvar="WORKER_CONFIG_FILE",
+    required=True,
 )
 @click.option(
     "--repository-path",
-    default=DEFAULT_REPOSITORY_PATH,
+    default=const.DEFAULT_REPOSITORY_PATH,
     envvar="WORKER_REPOSITORY_PATH",
     required=True,
     help="The path to the terraform module repository",
@@ -202,77 +194,6 @@ def cli(context, **kwargs):
 
 @cli.command()
 @click.option(
-    "--gcp-bucket",
-    default=DEFAULT_GCP_BUCKET,
-    help="The Cloud Storage bucket for storing terraform state/locks",
-)
-@click.option(
-    "--gcp-prefix",
-    default=DEFAULT_GCP_PREFIX,
-    help="The prefix in the bucket for the definitions to use",
-)
-@click.option(
-    "--s3-bucket",
-    default=DEFAULT_S3_BUCKET,
-    help="The s3 bucket for storing terraform state",
-)
-@click.option(
-    "--s3-prefix",
-    default=DEFAULT_S3_PREFIX,
-    help="The prefix in the bucket for the definitions to use",
-)
-@click.option("--limit", help="limit operations to a single definition", multiple=True)
-@click.argument("deployment", callback=validate_deployment)
-@click.pass_obj
-def clean(
-    obj,
-    gcp_bucket,
-    gcp_prefix,
-    s3_bucket,
-    s3_prefix,
-    limit,
-    deployment,
-):  # noqa: E501
-    """ clean up terraform state """
-    if s3_prefix == DEFAULT_S3_PREFIX:
-        s3_prefix = DEFAULT_S3_PREFIX.format(deployment=deployment)
-
-    if gcp_prefix == DEFAULT_GCP_PREFIX:
-        gcp_prefix = DEFAULT_GCP_PREFIX.format(deployment=deployment)
-
-    obj.clean = clean
-    obj.add_arg("gcp_bucket", gcp_bucket)
-    obj.add_arg("gcp_prefix", gcp_prefix)
-    obj.add_arg("s3_bucket", s3_bucket)
-    obj.add_arg("s3_prefix", s3_prefix)
-    config = get_aws_config(obj, deployment)
-
-    # clean just items if limit supplied, or everything if no limit
-    if len(limit) > 0:
-        for limit_item in limit:
-            click.secho(
-                "when using limit, dynamodb tables won't be completely dropped",
-                fg="yellow",
-            )
-            try:
-                # the bucket state deployment is part of the s3 prefix
-                clean_bucket_state(config, definition=limit_item)
-                # deployment name needs specified to determine the dynamo table
-                clean_locking_state(config, deployment, definition=limit_item)
-            except OldStateError as e:
-                click.secho("error deleting state: {}".format(e), fg="red")
-                raise SystemExit(1)
-    else:
-        try:
-            clean_bucket_state(config)
-        except OldStateError as e:
-            click.secho("error deleting state: {}".format(e))
-            raise SystemExit(1)
-        clean_locking_state(config, deployment)
-
-
-@cli.command()
-@click.option(
     "--clean/--no-clean",
     default=True,
     help="clean up the temporary directory created by the worker after execution",
@@ -300,28 +221,8 @@ def clean(
     help="shot output from terraform commands",
 )
 @click.option(
-    "--gcp-bucket",
-    default=DEFAULT_GCP_BUCKET,
-    help="The s3 bucket for storing terraform state",
-)
-@click.option(
-    "--gcp-prefix",
-    default=DEFAULT_GCP_PREFIX,
-    help="The prefix in the bucket for the definitions to use",
-)
-@click.option(
-    "--s3-bucket",
-    default=DEFAULT_S3_BUCKET,
-    help="The s3 bucket for storing terraform state",
-)
-@click.option(
-    "--s3-prefix",
-    default=DEFAULT_S3_PREFIX,
-    help="The prefix in the bucket for the definitions to use",
-)
-@click.option(
     "--terraform-bin",
-    default=DEFAULT_TERRFORM,
+    default=const.DEFAULT_TERRFORM,
     help="The complate location of the terraform binary",
 )
 @click.option(
@@ -336,276 +237,27 @@ def clean(
 @click.option("--limit", help="limit operations to a single definition", multiple=True)
 @click.argument("deployment", callback=validate_deployment)
 @click.pass_obj
-def terraform(
-    obj,
-    clean,
-    tf_apply,
-    force_apply,
-    destroy,
-    show_output,
-    gcp_bucket,
-    gcp_prefix,
-    s3_bucket,
-    s3_prefix,
-    terraform_bin,
-    b64_encode,
-    limit,
-    deployment,
-):  # noqa: E501
-    """Build a deployment."""
-    if tf_apply and destroy:
-        click.secho("can not apply and destroy at the same time", fg="red")
-        raise SystemExit(1)
-    plan_for = "apply"
+def dry_run(state, *args, **kwargs):
+    """ No do nothing """
+    # TODO (jwiles): do something with clean?
+    state.clean = kwargs.get("clean")
+    tfc = TerraformController(state, *args, **kwargs)
 
-    if gcp_prefix == DEFAULT_GCP_PREFIX:
-        gcp_prefix = DEFAULT_GCP_PREFIX.format(deployment=deployment)
-
-    # If the default value is used, render the deployment name into it
-    if s3_prefix == DEFAULT_S3_PREFIX:
-        s3_prefix = DEFAULT_S3_PREFIX.format(deployment=deployment)
-
-    click.secho("loading config file {}".format(obj.args.config_file), fg="green")
-    obj.load_config(obj.args.config_file)
-
-    providers = obj.config["terraform"]["providers"].keys()
-
-    obj.clean = clean
-    obj.add_arg("terraform_bin", terraform_bin)
-
-    obj.add_arg("s3_bucket", s3_bucket)
-    obj.add_arg("s3_prefix", s3_prefix)
-
-    # configuration for AWS interactions
-    _aws_config = get_aws_config(obj, deployment)
-
-    # TODO(jwiles): Where to ut this?  In the aws_config object? One backend render?
-    # Create locking table for aws backend
-    if obj.args.backend == tf.Backends.s3:
-        create_table(
-            "terraform-{}".format(deployment),
-            _aws_config.backend_region,
-            _aws_config.key_id,
-            _aws_config.key_secret,
-            _aws_config.session_token,
-        )
-
-    if tf.Providers.aws in providers:
-        obj.add_arg(
-            "aws_account_id",
-            get_aws_id(
-                _aws_config.key_id, _aws_config.key_secret, _aws_config.session_token
-            ),
-        )
-
-    if tf.Providers.google in providers:
-        obj.add_arg("gcp_bucket", gcp_bucket)
-        obj.add_arg("gcp_prefix", gcp_prefix)
-
-    click.secho("building deployment {}".format(deployment), fg="green")
-    click.secho("using temporary Directory: {}".format(obj.temp_dir), fg="yellow")
+    click.secho("building deployment {}".format(kwargs.get("deployment")), fg="green")
+    click.secho("using temporary Directory: {}".format(tfc.temp_dir), fg="yellow")
 
     # common setup required for all definitions
     click.secho("downloading plugins", fg="green")
-    tf.download_plugins(obj.config["terraform"]["plugins"], obj.temp_dir)
-    tf.prep_modules(obj.args.repository_path, obj.temp_dir)
-    tf_items = []
+    tfc.plugins.download()
+    click.secho("preparing modules", fg="green")
+    tfc.prep_modules()
 
-    # setup tf_items to capture the limit/order based on options
-    if destroy:
-        for name, body in reversed(obj.config["terraform"]["definitions"].items()):
-            if limit and name not in limit:
-                continue
-            tf_items.append((name, body))
-        plan_for = "destroy"
-    else:
-        for name, body in obj.config["terraform"]["definitions"].items():
-            if limit and name not in limit:
-                continue
-            tf_items.append((name, body))
-
-    for name, body in tf_items:
-        execute = False
-        # copy definition files / templates etc.
-        click.secho("preparing definition: {}".format(name), fg="green")
-        tf.prep_def(
-            name,
-            body,
-            obj.config["terraform"],
-            obj.temp_dir,
-            obj.args.repository_path,
-            deployment,
-            obj.args,
-        )
-
-        # run terraform init
-        try:
-            tf.run(
-                name,
-                obj.temp_dir,
-                terraform_bin,
-                "init",
-                key_id=_aws_config.key_id,
-                key_secret=_aws_config.key_secret,
-                key_token=_aws_config.session_token,
-                debug=show_output,
-            )
-        except tf.TerraformError:
-            click.secho("error running terraform init", fg="red")
-            raise SystemExit(1)
-
-        click.secho("planning definition: {}".format(name), fg="green")
-
-        # run terraform plan
-        try:
-            tf.run(
-                name,
-                obj.temp_dir,
-                terraform_bin,
-                "plan",
-                key_id=_aws_config.key_id,
-                key_secret=_aws_config.key_secret,
-                key_token=_aws_config.session_token,
-                debug=show_output,
-                plan_action=plan_for,
-                b64_encode=b64_encode,
-            )
-        except tf.PlanChange:
-            execute = True
-        except tf.TerraformError:
-            click.secho(
-                "error planning terraform definition: {}!".format(name), fg="red"
-            )
-            raise SystemExit(1)
-
-        if force_apply:
-            execute = True
-
-        if execute and tf_apply:
-            if force_apply:
-                click.secho("force apply for {}, applying".format(name), fg="yellow")
-            else:
-                click.secho("plan changes for {}, applying".format(name), fg="yellow")
-        elif execute and destroy:
-            click.secho("plan changes for {}, destroying".format(name), fg="yellow")
-        elif not execute:
-            click.secho("no plan changes for {}".format(name), fg="yellow")
-            continue
-
-        try:
-            tf.run(
-                name,
-                obj.temp_dir,
-                terraform_bin,
-                plan_for,
-                key_id=_aws_config.key_id,
-                key_secret=_aws_config.key_secret,
-                key_token=_aws_config.session_token,
-                debug=show_output,
-                b64_encode=b64_encode,
-            )
-        except tf.TerraformError:
-            click.secho(
-                "error with terraform {} on definition {}, exiting".format(
-                    plan_for, name
-                ),
-                fg="red",
-            )
-            raise SystemExit(1)
-        else:
-            click.secho(
-                "terraform {} complete for {}".format(plan_for, name), fg="green"
-            )
-
-
-@cli.command()
-@click.option(
-    "--clean/--no-clean",
-    default=True,
-    help="clean up the temporary directory created by the worker after execution",
-)
-@click.option(
-    "--apply/--no-apply",
-    "tf_apply",
-    default=False,
-    help="apply the terraform configuration",
-)
-@click.option(
-    "--force-apply/--no-force-apply",
-    "force_apply",
-    default=False,
-    help="force apply without plan change",
-)
-@click.option(
-    "--destroy/--no-destroy",
-    default=False,
-    help="destroy a deployment instead of create it",
-)
-@click.option(
-    "--show-output/--no-show-output",
-    default=False,
-    help="shot output from terraform commands",
-)
-@click.option(
-    "--terraform-bin",
-    default=DEFAULT_TERRFORM,
-    help="The complate location of the terraform binary",
-)
-@click.option(
-    "--b64-encode-hook-values/--no--b64-encode-hook-values",
-    "b64_encode",
-    default=False,
-    help=(
-        "Terraform variables and outputs can be complex data structures, setting this"
-        " open will base64 encode the values for use in hook scripts"
-    ),
-)
-@click.option("--limit", help="limit operations to a single definition", multiple=True)
-@click.pass_obj
-def bugout(state, deployment="foobar", **kwargs):
-    """ No do nothing """
-    tfc = TerraformController(state)
-
-    import pdb
+    _ = """import pdb
 
     pdb.set_trace()
-    print()
+    print()"""
 
-    if tf.Providers.aws in providers:
-        obj.add_arg(
-            "aws_account_id",
-            get_aws_id(
-                _aws_config.key_id, _aws_config.key_secret, _aws_config.session_token
-            ),
-        )
-
-    if tf.Providers.google in providers:
-        obj.add_arg("gcp_bucket", kwargs.get("gcp_bucket"))
-        obj.add_arg("gcp_prefix", kwargs.get("gcp_prefix"))
-
-    click.secho("building deployment {}".format(deployment), fg="green")
-    click.secho("using temporary Directory: {}".format(obj.temp_dir), fg="yellow")
-
-    # common setup required for all definitions
-    click.secho("downloading plugins", fg="green")
-    tf.download_plugins(obj.config["terraform"]["plugins"], obj.temp_dir)
-    tf.prep_modules(obj.args.repository_path, obj.temp_dir)
-    tf_items = []
-
-    # setup tf_items to capture the limit/order based on options
-    if kwargs.get("destroy"):
-        for name, body in reversed(obj.config["terraform"]["definitions"].items()):
-            if kwargs.get("limit") and name not in kwargs.get("limit"):
-                continue
-            tf_items.append((name, body))
-        plan_for = "destroy"
-    else:
-        for name, body in obj.config["terraform"]["definitions"].items():
-            if kwargs.get("limit") and name not in kwargs.get("limit"):
-                continue
-            tf_items.append((name, body))
-
-    print(f"bugged out with: {plan_for}")
+    print(f"tf_dry_run with: {tfc._plan_for}")
     sys.exit(0)
 
 

@@ -11,9 +11,33 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import collections
 
 from .aws import AWSAuthenticator  # noqa
 from .base import UnknownAuthenticator  # noqa
 from .google import GoogleAuthenticator  # noqa
 
 ALL = [AWSAuthenticator, GoogleAuthenticator]
+
+
+class AuthenticatorsCollection(collections.abc.Mapping):
+    def __init__(self, state):
+        self._authenticators = dict([(auth.tag, auth(state.args)) for auth in ALL])
+
+    def __len__(self):
+        return len(self._authenticators)
+
+    def __getitem__(self, value):
+        if type(value) == int:
+            return self._authenticators[list(self._authenticators.keys())[value]]
+        return self._authenticators[value]
+
+    def __iter__(self):
+        return iter(self._authenticators.values())
+
+    def get(self, value):
+        try:
+            return self[value]
+        except Exception:
+            pass
+        return None

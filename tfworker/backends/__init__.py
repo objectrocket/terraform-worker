@@ -3,8 +3,8 @@ from .base import Backends
 from .gcs import GCSBackend  # noqa
 
 
-def select_backend(backend, state, controller):
-    if Backends.s3 in backend:
-        return S3Backend(backend, state, controller)
-    elif Backends.gcs in backend:
-        return GCSBackend(backend, state, controller)
+def select_backend(backend, authenticators):
+    if backend == Backends.s3:
+        return S3Backend(authenticators)
+    elif backend == Backends.gcs:
+        return GCSBackend(authenticators)

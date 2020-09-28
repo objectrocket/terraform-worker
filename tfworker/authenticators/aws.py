@@ -7,8 +7,8 @@ from tfworker import constants as const
 class AWSAuthenticator(BaseAuthenticator):
     tag = "aws"
 
-    def __init__(self, args):
-        super(AWSAuthenticator, self).__init__(args)
+    def __init__(self, state_args, *args, **kwargs):
+        super(AWSAuthenticator, self).__init__(state_args, *args, **kwargs)
 
         self.access_key_id = self._resolve_arg("aws_access_key_id")
         self.backend_region = self._resolve_arg("backend_region")
@@ -20,8 +20,9 @@ class AWSAuthenticator(BaseAuthenticator):
         self.secret_access_key = self._resolve_arg("aws_secret_access_key")
         self.session_token = self._resolve_arg("aws_session_token")
 
-        self._session = None
+        self._account_id = None
         self._backend_session = None
+        self._session = None
 
         # If the default value is used, render the deployment name into it
         if self.prefix == const.DEFAULT_BACKEND_PREFIX:
@@ -30,22 +31,30 @@ class AWSAuthenticator(BaseAuthenticator):
             )
 
     @property
-    def session_args(self):
-        args = dict()
+    def _session_state_args(self):
+        state_args = dict()
 
         if self.profile:
-            args["profile_name"] = self.profile
+            state_args["profile_name"] = self.profile
 
         if self.access_key_id:
-            args["aws_access_key_id"] = self.access_key_id
+            state_args["aws_access_key_id"] = self.access_key_id
 
         if self.secret_access_key:
-            args["aws_secret_access_key"] = self.secret_access_key
+            state_args["aws_secret_access_key"] = self.secret_access_key
 
         if self.session_token is not None:
-            args["aws_session_token"] = self.session_token
+            state_args["aws_session_token"] = self.session_token
 
-        return args
+        return state_args
+
+    @property
+    def account_id(self):
+        if not self._account_id:
+            self._account_id = AWSAuthenticator.get_aws_id(
+                self.access_key_id, self.secret_access_key, self.session_token,
+            )
+        return self._account_id
 
     @property
     def backend_session(self):
@@ -54,7 +63,9 @@ class AWSAuthenticator(BaseAuthenticator):
     @property
     def session(self):
         if not self._session:
-            self._session = boto3.Session(region_name=self.region, **self.session_args)
+            self._session = boto3.Session(
+                region_name=self.region, **self._session_state_args
+            )
 
             if not self.role_arn:
                 # if a role was not provided, need to ensure credentials areset
@@ -67,10 +78,10 @@ class AWSAuthenticator(BaseAuthenticator):
                     self._backend_session = self._session
                 else:
                     self._backend_session = boto3.Session(
-                        region_name=self.backend_region, **self.session_args
+                        region_name=self.backend_region, **self._session_state_args
                     )
             else:
-                (self.__session, creds) = self.get_assumed_role_session(
+                (self.__session, creds) = AWSAuthenticator.get_assumed_role_session(
                     self._session, self.self.role_arn
                 )
                 self.access_key_id = creds["AccessKeyId"]
@@ -106,3 +117,14 @@ class AWSAuthenticator(BaseAuthenticator):
         )
 
         return new_session, role_creds
+
+    @staticmethod
+    def get_aws_id(key_id, key_secret, session_token=None):
+        """Return the AWS account ID."""
+        client = boto3.client(
+            "sts",
+            aws_access_key_id=key_id,
+            aws_secret_access_key=key_secret,
+            aws_session_token=session_token,
+        )
+        return client.get_caller_identity()["Account"]

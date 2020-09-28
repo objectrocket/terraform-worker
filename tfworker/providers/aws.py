@@ -12,8 +12,10 @@ class AWSProvider(BaseProvider):
     tag = "aws"
 
     def __init__(self, body, authenticators, *args, **kwargs):
-        self._authenticator = self.select_authenticator(authenticators)
-        self.version = body.get("vars", {}).get("version")
+        super(AWSProvider, self).__init__(body)
+
+        self._authenticator = authenticators.get(self.tag)
+        self.vars = body.get("vars", {})
 
     # Provider-specific methods
     def clean_bucket_state(self, definition=None):
