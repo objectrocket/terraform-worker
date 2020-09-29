@@ -1,5 +1,3 @@
-import collections
-import copy
 import os
 import shutil
 import sys
@@ -11,14 +9,14 @@ import jinja2
 
 from tfworker.authenticators import AuthenticatorsCollection
 from tfworker.backends import select_backend
+from tfworker.commands.base import BaseCommand
 from tfworker.definitions import DefinitionsCollection
 from tfworker.plugins import PluginsCollection
 from tfworker.providers import ProvidersCollection
 
 
-class TerraformController:
-    def __init__(self, state, *args, **kwargs):
-        click.secho(f"kwargs: {kwargs}", fg="yellow")
+class TerraformCommand(BaseCommand):
+    def __init__(self, root, *args, **kwargs):
         self._version = None
         self._providers = None
         self._definitions = None
@@ -27,22 +25,22 @@ class TerraformController:
         self._tf_apply = kwargs.get("tf_apply")
         self._destroy = kwargs.get("destroy")
         self._limit = kwargs.get("limit")
-        self._temp_dir = state.temp_dir
-        self._repository_path = state.args.repository_path
-        self._authenticators = AuthenticatorsCollection(state)
+        self._temp_dir = root.temp_dir
+        self._repository_path = root.args.repository_path
+        self._authenticators = AuthenticatorsCollection(root)
 
         self._plan_for = "destroy" if self._destroy else "apply"
         if self._limit:
             click.secho(f"we got limit: {self._limit}", fg="yellow")
 
-        click.secho("loading config file {}".format(state.args.config_file), fg="green")
-        state.load_config(state.args.config_file)
+        click.secho("loading config file {}".format(root.args.config_file), fg="green")
+        root.load_config(root.args.config_file)
 
-        self.parse_config(state.config["terraform"])
+        self.parse_config(root.config["terraform"])
 
         # TODO??
         if not self._backend:
-            self._backend = select_backend(state.args.backend, self._authenticators)
+            self._backend = select_backend(root.args.backend, self._authenticators)
 
         if self._tf_apply and self._destroy:
             click.secho("can not apply and destroy at the same time", fg="red")
@@ -188,13 +186,15 @@ class TerraformController:
     def _prep_def(self, definition, all_defs, temp_dir, repo_path, deployment, args):
         """ prepare the definitions for running """
         repo = Path("{}/{}".format(repo_path, definition["path"]).replace("//", "/"))
-        target = Path("{}/definitions/{}".format(temp_dir, name).replace("//", "/"))
+        target = Path(
+            "{}/definitions/{}".format(temp_dir, definition.tag).replace("//", "/")
+        )
         target.mkdir(parents=True, exist_ok=True)
 
         if not repo.exists():
             click.secho(
                 "Error preparing definition {}, path {} does not exist".format(
-                    name, repo.resolve()
+                    definition.tag, repo.resolve()
                 ),
                 fg="red",
             )
@@ -255,13 +255,15 @@ class TerraformController:
                 tflocals.write("}\n\n")
 
         # Create the terraform configuration, terraform.tf
-        state = render_backend(name, deployment, args)
-        remote_data = render_backend_data_source(all_defs["definitions"], name, args)
+        state = render_backend(definition.tag, deployment, args)
+        remote_data = render_backend_data_source(
+            all_defs["definitions"], definitions.tag, args
+        )
         providers = render_providers(all_defs["providers"], args)
 
         with open("{}/{}".format(str(target), "terraform.tf"), "w+") as tffile:
             tffile.write("{}\n\n".format(providers))
-            tffile.write("{}\n\n".format(state))
+            tffile.write("{}\n\n".format(self._backend.tfjson()))
             tffile.write("{}\n\n".format(remote_data))
 
         # Create the variable definitions
@@ -272,3 +274,24 @@ class TerraformController:
                     varfile.write("{} = {}\n".format(k, varstring))
                 else:
                     varfile.write('{} = "{}"\n'.format(k, v))
+
+    @staticmethod
+    def make_vars(self, section, single, base=None):
+        """Make a variables dictionary based on default vars, as well as specific vars for an item."""
+        if base is None:
+            base = {}
+
+        item_vars = copy.deepcopy(base.get(section, {}))
+        for k, v in single.get(section, {}).items():
+            # terraform expects variables in a specific type, so need to convert bools to a lower case true/false
+            matched_type = False
+            if v is True:
+                item_vars[k] = "true"
+                matched_type = True
+            if v is False:
+                item_vars[k] = "false"
+                matched_type = True
+            if not matched_type:
+                item_vars[k] = v
+
+        return item_vars

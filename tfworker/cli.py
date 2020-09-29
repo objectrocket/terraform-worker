@@ -19,16 +19,10 @@ import struct
 import sys
 
 import click
-from tfworker import terraform as tf
+
 from tfworker import constants as const
-from tfworker.controller import TerraformController
-from tfworker.main import State, create_table, get_aws_id, get_platform
-from tfworker.providers.awsold import (
-    aws_config,
-    clean_bucket_state,
-    clean_locking_state,
-)
-from tfworker.providers import OldStateError
+from tfworker.commands import RootCommand, TerraformCommand
+from tfworker.commands.root import get_platform
 
 
 def validate_deployment(ctx, deployment, name):
@@ -184,7 +178,7 @@ def cli(context, **kwargs):
     validate_host()
     config_file = kwargs["config_file"]
     try:
-        context.obj = State(args=kwargs)
+        context.obj = RootCommand(args=kwargs)
     except FileNotFoundError:
         click.secho(
             "configuration file {} not found".format(config_file), fg="red", err=True
@@ -239,9 +233,7 @@ def cli(context, **kwargs):
 @click.pass_obj
 def dry_run(state, *args, **kwargs):
     """ No do nothing """
-    # TODO (jwiles): do something with clean?
-    state.clean = kwargs.get("clean")
-    tfc = TerraformController(state, *args, **kwargs)
+    tfc = TerraformCommand(state, *args, **kwargs)
 
     click.secho("building deployment {}".format(kwargs.get("deployment")), fg="green")
     click.secho("using temporary Directory: {}".format(tfc.temp_dir), fg="yellow")
@@ -257,6 +249,7 @@ def dry_run(state, *args, **kwargs):
     pdb.set_trace()
     print()"""
 
+    tfc.exec()
     print(f"tf_dry_run with: {tfc._plan_for}")
     sys.exit(0)
 

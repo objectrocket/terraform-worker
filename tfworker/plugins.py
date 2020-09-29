@@ -1,12 +1,13 @@
 import collections
 import glob
 import os
-import platform
 import shutil
 import urllib
 import zipfile
 
 import click
+
+from tfworker.commands.root import get_platform
 
 
 class PluginsCollection(collections.abc.Mapping):
@@ -36,7 +37,7 @@ class PluginsCollection(collections.abc.Mapping):
         versions have changed. In production try  to remove all all external
         repositories/sources from the critical path.
         """
-        opsys, machine = PluginsCollection.get_platform()
+        opsys, machine = get_platform()
         _platform = "{}_{}".format(opsys, machine)
 
         plugin_dir = "{}/terraform-plugins".format(self._temp_dir)
@@ -69,20 +70,3 @@ class PluginsCollection(collections.abc.Mapping):
             files = glob.glob("{}/{}/terraform-provider*".format(plugin_dir, _platform))
             for afile in files:
                 os.chmod(afile, 0o755)
-
-    @staticmethod
-    def get_platform():
-        """
-        get_platform will return a formatted operating system / architecture
-        tuple that is consistent with common distribution creation tools
-        """
-
-        # strip off "2" which only appears on old linux kernels
-        opsys = platform.system().rstrip("2").lower()
-
-        # make sure machine uses consistent format
-        machine = platform.machine()
-        if machine == "x86_64":
-            machine = "amd64"
-
-        return (opsys, machine)
