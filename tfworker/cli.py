@@ -160,17 +160,17 @@ def validate_host():
 @click.option(
     "--backend-bucket",
     default=const.DEFAULT_BACKEND_BUCKET,
-    help="Region where terraform state/lock bucket exists",
+    help="Region where terraform rootc/lock bucket exists",
 )
 @click.option(
     "--backend-prefix",
     default=const.DEFAULT_BACKEND_PREFIX,
-    help="Region where terraform state/lock bucket exists",
+    help="Region where terraform rootc/lock bucket exists",
 )
 @click.option(
     "--backend-region",
     default=const.DEFAULT_BACKEND_REGION,
-    help="Region where terraform state/lock bucket exists",
+    help="Region where terraform rootc/lock bucket exists",
 )
 @click.pass_context
 def cli(context, **kwargs):
@@ -231,9 +231,9 @@ def cli(context, **kwargs):
 @click.option("--limit", help="limit operations to a single definition", multiple=True)
 @click.argument("deployment", callback=validate_deployment)
 @click.pass_obj
-def dry_run(state, *args, **kwargs):
+def dry_run(rootc, *args, **kwargs):
     """ No do nothing """
-    tfc = TerraformCommand(state, *args, **kwargs)
+    tfc = TerraformCommand(rootc, *args, **kwargs)
 
     click.secho("building deployment {}".format(kwargs.get("deployment")), fg="green")
     click.secho("using temporary Directory: {}".format(tfc.temp_dir), fg="yellow")

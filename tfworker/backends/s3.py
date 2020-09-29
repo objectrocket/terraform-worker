@@ -8,8 +8,10 @@ class S3Backend(BaseBackend):
     tag = "s3"
     auth_tag = "aws"
 
-    def __init__(self, authenticators, *args, **kwargs):
+    def __init__(self, deployment, authenticators, definitions):
         self._authenticator = authenticators.get(self.auth_tag)
+        self._definitions = definitions
+        self._deployment = deployment
 
         self.backend_prefix = self._authenticator.prefix
         self.backend_region = self._authenticator.region
@@ -18,7 +20,7 @@ class S3Backend(BaseBackend):
         # TODO(jwiles)
         if False:
             self.create_table(
-                "terraform-{}".format(kwargs.get("deployment")),
+                f"terraform-{deployment}",
                 self._authenticator.backend_region,
                 self._authenticator.access_key_id,
                 self._authenticator.secret_access_token,
@@ -66,3 +68,38 @@ class S3Backend(BaseBackend):
             client.get_waiter("table_exists").wait(
                 TableName=name, WaiterConfig={"Delay": 10, "MaxAttempts": 30}
             )
+
+    def hcl(self, name):
+        state_config = []
+        state_config.append("terraform {")
+        state_config.append('  backend "s3" {')
+        state_config.append(f'    region = "{self._authenticator.region}"')
+        state_config.append(f'    bucket = "{self._authenticator.bucket}"')
+        state_config.append(
+            f'    key = "{self._authenticator.prefix}/{name}/terraform.tfstate"'
+        )
+        state_config.append(f'    dynamodb_table = "terraform-{self._deployment}"')
+        state_config.append('    encrypt = "true"')
+        state_config.append("  }")
+        state_config.append("}")
+        return "\n".join(state_config)
+
+    def data_hcl(self, exclude):
+        remote_data_config = []
+        for definition in self._definitions:
+            if definition.tag == exclude:
+                break
+            remote_data_config.append(
+                f'data "terraform_remote_state" "{definition.tag}" {{'
+            )
+            remote_data_config.append('  backend = "s3"')
+            remote_data_config.append("  config = {")
+            remote_data_config.append(f'    region = "{self._authenticator.region}"')
+            remote_data_config.append(f'    bucket = "{self._authenticator.bucket}"')
+            remote_data_config.append(
+                "    key ="
+                f' "{self._authenticator.prefix}/{definition.tag}/terraform.tfstate"'
+            )
+            remote_data_config.append("  }")
+            remote_data_config.append("}\n")
+        return "\n".join(remote_data_config)

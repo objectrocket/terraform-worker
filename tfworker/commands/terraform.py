@@ -1,3 +1,4 @@
+import copy
 import os
 import shutil
 import sys
@@ -16,7 +17,7 @@ from tfworker.providers import ProvidersCollection
 
 
 class TerraformCommand(BaseCommand):
-    def __init__(self, root, *args, **kwargs):
+    def __init__(self, rootc, *args, **kwargs):
         self._version = None
         self._providers = None
         self._definitions = None
@@ -25,26 +26,33 @@ class TerraformCommand(BaseCommand):
         self._tf_apply = kwargs.get("tf_apply")
         self._destroy = kwargs.get("destroy")
         self._limit = kwargs.get("limit")
-        self._temp_dir = root.temp_dir
-        self._repository_path = root.args.repository_path
-        self._authenticators = AuthenticatorsCollection(root)
+        self._deployment = kwargs.get("deployment")
+        self._temp_dir = rootc.temp_dir
+        self._repository_path = rootc.args.repository_path
+        self._authenticators = AuthenticatorsCollection(rootc)
 
         self._plan_for = "destroy" if self._destroy else "apply"
         if self._limit:
             click.secho(f"we got limit: {self._limit}", fg="yellow")
 
-        click.secho("loading config file {}".format(root.args.config_file), fg="green")
-        root.load_config(root.args.config_file)
+        click.secho("loading config file {}".format(rootc.args.config_file), fg="green")
+        rootc.load_config(rootc.args.config_file)
 
-        self.parse_config(root.config["terraform"])
+        self.parse_config(rootc.config["terraform"])
 
-        # TODO??
-        if not self._backend:
-            self._backend = select_backend(root.args.backend, self._authenticators)
+        self._backend = select_backend(
+            rootc.args.backend,
+            self._deployment,
+            self._authenticators,
+            self._definitions,
+        )
 
         if self._tf_apply and self._destroy:
             click.secho("can not apply and destroy at the same time", fg="red")
             raise SystemExit(1)
+
+        # HACKIE HACKHACK
+        rootc.clean = kwargs.get("clean", True)
 
     def parse_config(self, tf):
         for k, v in tf.items():
@@ -54,8 +62,6 @@ class TerraformCommand(BaseCommand):
                 self._definitions = DefinitionsCollection(
                     v, self._plan_for, self._limit
                 )
-            elif k == "backend":
-                self._backend = select_backend(v, self._authenticators)
             elif k == "plugins":
                 self._plugins = PluginsCollection(v, self.temp_dir)
 
@@ -183,11 +189,13 @@ class TerraformCommand(BaseCommand):
                     "terraform {} complete for {}".format(plan_for, name), fg="green"
                 )"""
 
-    def _prep_def(self, definition, all_defs, temp_dir, repo_path, deployment, args):
+    def _prep_def(self, definition):
         """ prepare the definitions for running """
-        repo = Path("{}/{}".format(repo_path, definition["path"]).replace("//", "/"))
+        repo = Path(
+            "{}/{}".format(self._repository_path, definition.path).replace("//", "/")
+        )
         target = Path(
-            "{}/definitions/{}".format(temp_dir, definition.tag).replace("//", "/")
+            "{}/definitions/{}".format(self.temp_dir, definition.tag).replace("//", "/")
         )
         target.mkdir(parents=True, exist_ok=True)
 
@@ -202,11 +210,11 @@ class TerraformCommand(BaseCommand):
 
         # Prepare variables
         terraform_vars = None
-        template_vars = make_vars("template_vars", definition, all_defs)
-        terraform_vars = make_vars("terraform_vars", definition, all_defs)
+        template_vars = make_vars("template_vars", definition, self._definitions)
+        terraform_vars = make_vars("terraform_vars", definition, self._definitions)
         locals_vars = make_vars("remote_vars", definition)
-        template_vars["deployment"] = deployment
-        terraform_vars["deployment"] = deployment
+        template_vars["deployment"] = self._deployment
+        terraform_vars["deployment"] = self._deployment
 
         # Put terraform files in place
         for tf in repo.glob("*.tf"):
@@ -254,17 +262,10 @@ class TerraformCommand(BaseCommand):
                     )
                 tflocals.write("}\n\n")
 
-        # Create the terraform configuration, terraform.tf
-        state = render_backend(definition.tag, deployment, args)
-        remote_data = render_backend_data_source(
-            all_defs["definitions"], definitions.tag, args
-        )
-        providers = render_providers(all_defs["providers"], args)
-
         with open("{}/{}".format(str(target), "terraform.tf"), "w+") as tffile:
-            tffile.write("{}\n\n".format(providers))
-            tffile.write("{}\n\n".format(self._backend.tfjson()))
-            tffile.write("{}\n\n".format(remote_data))
+            tffile.write("{}\n\n".format(self._providers.hcl()))
+            tffile.write("{}\n\n".format(self._backend.hcl(definition.tag)))
+            tffile.write("{}\n\n".format(self._backend.data_hcl(definition.tag)))
 
         # Create the variable definitions
         with open("{}/{}".format(str(target), "worker.auto.tfvars"), "w+") as varfile:
@@ -295,3 +296,31 @@ class TerraformCommand(BaseCommand):
                 item_vars[k] = v
 
         return item_vars
+
+
+def quote_str(string):
+    """Put literal quotes around a string."""
+    return '"{}"'.format(string)
+
+
+def make_vars(section, single, base=None):
+    """Make a variables dictionary based on default vars, as well as specific vars for an item."""
+    if base is None:
+        base = {}
+    else:
+        base = base.body
+
+    item_vars = copy.deepcopy(base.get(section, {}))
+    for k, v in single.body.get(section, {}).items():
+        # terraform expects variables in a specific type, so need to convert bools to a lower case true/false
+        matched_type = False
+        if v is True:
+            item_vars[k] = "true"
+            matched_type = True
+        if v is False:
+            item_vars[k] = "false"
+            matched_type = True
+        if not matched_type:
+            item_vars[k] = v
+
+    return item_vars

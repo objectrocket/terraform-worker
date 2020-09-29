@@ -16,6 +16,25 @@ class BaseProvider:
             separators=(",", ": "),
         )
 
+    def hcl(self):
+        result = []
+        provider_vars = {}
+        try:
+            for k, v in self.vars.items():
+                provider_vars[k] = v
+        except (KeyError, TypeError):
+            """No provider vars were set."""
+            pass
+
+        result.append('provider "{}" {{'.format(self.tag))
+        for k, v in provider_vars.items():
+            if '"' not in v:
+                result.append('  {} = "{}"'.format(k, v))
+            else:
+                result.append("  {} = {}".format(k, v))
+        result.append("}")
+        return "\n".join(result)
+
 
 class UnknownProvider(Exception):
     def __init__(self, provider):

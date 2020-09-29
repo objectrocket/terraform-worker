@@ -74,3 +74,6 @@ class ProvidersCollection(collections.abc.Mapping):
 
     def __iter__(self):
         return iter(self._providers.values())
+
+    def hcl(self):
+        return "\n".join([prov.hcl() for _, prov in self._providers.items()])

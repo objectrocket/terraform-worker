@@ -14,8 +14,12 @@ class Definition:
         self._terraform_vars = body.get("terraform_vars")
 
     @property
+    def body(self):
+        return self._body
+
+    @property
     def path(self):
-        return self.path
+        return self._path
 
     @property
     def remote_vars(self):
@@ -28,6 +32,7 @@ class Definition:
 
 class DefinitionsCollection(collections.abc.Mapping):
     def __init__(self, definitions, plan_for, limit):
+        self._body = definitions
         self._definitions = collections.OrderedDict()
         self._plan_for = plan_for
         click.secho(f"limit: {limit}", fg="yellow")
@@ -48,3 +53,7 @@ class DefinitionsCollection(collections.abc.Mapping):
         if self._plan_for == "destroy":
             return iter(reversed(list(self._definitions.values())))
         return iter(self._definitions.values())
+
+    @property
+    def body(self):
+        return self._body
