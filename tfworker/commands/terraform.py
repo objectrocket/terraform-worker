@@ -1,43 +1,50 @@
-import copy
+import base64
+import json
 import os
+import re
+import shlex
 import shutil
-import sys
-
-from pathlib import Path
+import subprocess
 
 import click
-import jinja2
 
-from tfworker.authenticators import AuthenticatorsCollection
-from tfworker.backends import select_backend
 from tfworker.commands.base import BaseCommand
-from tfworker.definitions import DefinitionsCollection
-from tfworker.plugins import PluginsCollection
-from tfworker.providers import ProvidersCollection
+from tfworker.backends import select_backend
+
+
+class HookError(Exception):
+    pass
+
+
+class PlanChange(Exception):
+    pass
+
+
+class TerraformError(Exception):
+    pass
 
 
 class TerraformCommand(BaseCommand):
     def __init__(self, rootc, *args, **kwargs):
-        self._version = None
-        self._providers = None
-        self._definitions = None
-        self._backend = None
-        self._plugins = None
-        self._tf_apply = kwargs.get("tf_apply")
-        self._destroy = kwargs.get("destroy")
-        self._limit = kwargs.get("limit")
-        self._deployment = kwargs.get("deployment")
-        self._temp_dir = rootc.temp_dir
-        self._repository_path = rootc.args.repository_path
-        self._authenticators = AuthenticatorsCollection(rootc)
+        super(TerraformCommand, self).__init__(rootc, *args, **kwargs)
 
-        self._plan_for = "destroy" if self._destroy else "apply"
+        self._b64_encode = kwargs.get("b64_encode")
+        self._destroy = kwargs.get("destroy")
+        self._deployment = kwargs.get("deployment")
+        self._limit = kwargs.get("limit")
+        self._show_output = kwargs.get("show_output")
+        self._terraform_bin = kwargs.get("terraform_bin")
+        self._tf_apply = kwargs.get("tf_apply")
+
         if self._limit:
             click.secho(f"we got limit: {self._limit}", fg="yellow")
 
-        click.secho("loading config file {}".format(rootc.args.config_file), fg="green")
-        rootc.load_config(rootc.args.config_file)
+        self._plan_for = "destroy" if kwargs.get("destroy") else "apply"
+        self._limit = kwargs.get("limit")
 
+        # HACK JESSE: This is a compromise. It would have been nice to
+        # put this call in the base constructor but it depends on params
+        # from the sub-command
         self.parse_config(rootc.config["terraform"])
 
         self._backend = select_backend(
@@ -51,44 +58,10 @@ class TerraformCommand(BaseCommand):
             click.secho("can not apply and destroy at the same time", fg="red")
             raise SystemExit(1)
 
-        # HACKIE HACKHACK
-        rootc.clean = kwargs.get("clean", True)
-
-    def parse_config(self, tf):
-        for k, v in tf.items():
-            if k == "providers":
-                self._providers = ProvidersCollection(v, self._authenticators)
-            elif k == "definitions":
-                self._definitions = DefinitionsCollection(
-                    v, self._plan_for, self._limit
-                )
-            elif k == "plugins":
-                self._plugins = PluginsCollection(v, self.temp_dir)
-
-    @property
-    def providers(self):
-        return self._providers
-
-    @property
-    def definitions(self):
-        return self._definitions
-
-    @property
-    def plugins(self):
-        return self._plugins
-
-    @property
-    def temp_dir(self):
-        return self._temp_dir
-
     def prep_modules(self):
         """Puts the modules sub directories into place."""
-        mod_source = "{}/terraform-modules".format(self._repository_path).replace(
-            "//", "/"
-        )
-        mod_destination = "{}/terraform-modules".format(self._temp_dir).replace(
-            "//", "/"
-        )
+        mod_source = f"{self._repository_path}/terraform-modules".replace("//", "/")
+        mod_destination = f"{self._temp_dir}/terraform-modules".replace("//", "/")
         click.secho(
             f"copying modules from {mod_source} to {mod_destination}", fg="yellow"
         )
@@ -103,26 +76,17 @@ class TerraformCommand(BaseCommand):
         for definition in self.definitions:
             # execute = False
             # copy definition files / templates etc.
-            click.secho("preparing definition: {}".format(definition.tag), fg="green")
-            self._prep_def(definition)
-            _ = """
+            click.secho(f"preparing definition: {definition.tag}", fg="green")
+            definition.prep(self._backend)
             # run terraform init
             try:
-                tf.run(
-                    name,
-                    obj.temp_dir,
-                    terraform_bin,
-                    "init",
-                    key_id=_aws_config.key_id,
-                    key_secret=_aws_config.key_secret,
-                    key_token=_aws_config.session_token,
-                    debug=show_output,
-                )
-            except tf.TerraformError:
+                self._run(definition, "init", debug=self._show_output)
+            except TerraformError:
                 click.secho("error running terraform init", fg="red")
                 raise SystemExit(1)
 
-            click.secho("planning definition: {}".format(name), fg="green")
+            _ = """
+            click.secho("planning definition: {}".format(definition.tag), fg="green")
 
             # run terraform plan
             try:
@@ -189,138 +153,333 @@ class TerraformCommand(BaseCommand):
                     "terraform {} complete for {}".format(plan_for, name), fg="green"
                 )"""
 
-    def _prep_def(self, definition):
-        """ prepare the definitions for running """
-        repo = Path(
-            "{}/{}".format(self._repository_path, definition.path).replace("//", "/")
-        )
-        target = Path(
-            "{}/definitions/{}".format(self.temp_dir, definition.tag).replace("//", "/")
-        )
-        target.mkdir(parents=True, exist_ok=True)
+    def _run(self, definition, command, debug=False, plan_action="init"):
+        """Run terraform."""
+        params = {
+            "init": "-input=false -no-color",
+            "plan": "-input=false -detailed-exitcode -no-color",
+            "apply": "-input=false -no-color -auto-approve",
+            "destroy": "-input=false -no-color -force",
+        }
 
-        if not repo.exists():
+        if plan_action == "destroy":
+            params["plan"] += " -destroy"
+
+        env = os.environ.copy()
+        # TODO(jwiles): Is this safe?
+        for auth in self._authenticators:
+            env.update(auth.env())
+
+        env["TF_PLUGIN_CACHE_DIR"] = f"{self._temp_dir}/terraform-plugins"
+
+        working_dir = f"{self._temp_dir}/definitions/{definition.tag}"
+        command_params = params.get(command)
+        if not command_params:
+            raise ValueError(
+                f"invalid command passed to terraform, {command} has no defined params!"
+            )
+
+        # only execute hooks for apply/destroy
+        try:
+            if TerraformCommand.check_hooks(
+                "pre", working_dir, command
+            ) and command in ["apply", "destroy"]:
+                # pre exec hooks
+                # want to pass remotes
+                # want to pass tf_vars
+                click.secho(
+                    f"found pre-{command} hook script for definition {definition.tag},"
+                    " executing ",
+                    fg="yellow",
+                )
+                TerraformCommand.hook_exec(
+                    "pre",
+                    command,
+                    definition.tag,
+                    working_dir,
+                    env,
+                    self._terraform_bin,
+                    debug=debug,
+                    b64_encode=self._b64_encode,
+                )
+        except HookError as e:
             click.secho(
-                "Error preparing definition {}, path {} does not exist".format(
-                    definition.tag, repo.resolve()
-                ),
-                fg="red",
+                f"hook execution error on definition {definition.tag}: {e}", fg="red",
             )
-            sys.exit(1)
+            raise SystemExit(1)
 
-        # Prepare variables
-        terraform_vars = None
-        template_vars = make_vars("template_vars", definition, self._definitions)
-        terraform_vars = make_vars("terraform_vars", definition, self._definitions)
-        locals_vars = make_vars("remote_vars", definition)
-        template_vars["deployment"] = self._deployment
-        terraform_vars["deployment"] = self._deployment
+        (exit_code, stdout, stderr) = TerraformCommand.pipe_exec(
+            f"{self._terraform_bin} {command} {command_params}",
+            cwd=working_dir,
+            env=env,
+        )
+        if debug:
+            click.secho(f"exit code: {exit_code}", fg="blue")
+            for line in stdout.decode().splitlines():
+                click.secho(f"stdout: {line}", fg="blue")
+            for line in stderr.decode().splitlines():
+                click.secho(f"stderr: {line}", fg="red")
 
-        # Put terraform files in place
-        for tf in repo.glob("*.tf"):
-            shutil.copy("{}".format(str(tf)), str(target))
-        for tf in repo.glob("*.tfvars"):
-            shutil.copy("{}".format(str(tf)), str(target))
-        if os.path.isdir(str(repo) + "/templates".replace("//", "/")):
-            shutil.copytree(
-                "{}/templates".format(str(repo)), "{}/templates".format(str(target))
+        # special handling of the exit codes for "plan" operations
+        if command == "plan":
+            if exit_code == 0:
+                return True
+            if exit_code == 1:
+                raise TerraformError
+            if exit_code == 2:
+                raise PlanChange
+
+        if exit_code:
+            raise TerraformError
+
+        # only execute hooks for plan/destroy
+        try:
+            if TerraformCommand.check_hooks(
+                "post", working_dir, command
+            ) and command in ["apply", "destroy"]:
+                click.secho(
+                    f"found post-{command} hook script for definition {definition.tag},"
+                    " executing ",
+                    fg="yellow",
+                )
+                TerraformCommand.hook_exec(
+                    "post",
+                    command,
+                    definition.tag,
+                    working_dir,
+                    env,
+                    self._terraform_bin,
+                    debug=debug,
+                    b64_encode=self._b64_encode,
+                )
+        except HookError as e:
+            click.secho(
+                f"hook execution error on definition {definition.tag}: {e}", fg="red"
             )
-        if os.path.isdir(str(repo) + "/policies".replace("//", "/")):
-            shutil.copytree(
-                "{}/policies".format(str(repo)), "{}/policies".format(str(target))
-            )
-        if os.path.isdir(str(repo) + "/scripts".replace("//", "/")):
-            shutil.copytree(
-                "{}/scripts".format(str(repo)), "{}/scripts".format(str(target))
-            )
-        if os.path.isdir(str(repo) + "/hooks".replace("//", "/")):
-            shutil.copytree(
-                "{}/hooks".format(str(repo)), "{}/hooks".format(str(target))
-            )
-        if os.path.isdir(str(repo) + "/repos".replace("//", "/")):
-            shutil.copytree(
-                "{}/repos".format(str(repo)), "{}/repos".format(str(target))
-            )
-
-        # Render jinja templates and put in place
-        env = jinja2.Environment(loader=jinja2.FileSystemLoader)
-
-        for j2 in repo.glob("*.j2"):
-            contents = env.get_template(str(j2)).render(**template_vars)
-            with open("{}/{}".format(str(target), str(j2)), "w+") as j2_file:
-                j2_file.write(contents)
-
-        # Create local vars from remote data sources
-        if len(list(locals_vars.keys())) > 0:
-            with open(
-                "{}/{}".format(str(target), "worker-locals.tf"), "w+"
-            ) as tflocals:
-                tflocals.write("locals {\n")
-                for k, v in locals_vars.items():
-                    tflocals.write(
-                        '  {} = "${{data.terraform_remote_state.{}}}"\n'.format(k, v)
-                    )
-                tflocals.write("}\n\n")
-
-        with open("{}/{}".format(str(target), "terraform.tf"), "w+") as tffile:
-            tffile.write("{}\n\n".format(self._providers.hcl()))
-            tffile.write("{}\n\n".format(self._backend.hcl(definition.tag)))
-            tffile.write("{}\n\n".format(self._backend.data_hcl(definition.tag)))
-
-        # Create the variable definitions
-        with open("{}/{}".format(str(target), "worker.auto.tfvars"), "w+") as varfile:
-            for k, v in terraform_vars.items():
-                if isinstance(v, list):
-                    varstring = "[{}]".format(", ".join(map(quote_str, v)))
-                    varfile.write("{} = {}\n".format(k, varstring))
-                else:
-                    varfile.write('{} = "{}"\n'.format(k, v))
+            raise SystemExit(1)
+        return True
 
     @staticmethod
-    def make_vars(self, section, single, base=None):
-        """Make a variables dictionary based on default vars, as well as specific vars for an item."""
-        if base is None:
-            base = {}
+    def hook_exec(
+        phase,
+        command,
+        name,
+        working_dir,
+        env,
+        terraform_path,
+        debug=False,
+        b64_encode=False,
+    ):
+        """
+        hook_exec executes a hook script.
 
-        item_vars = copy.deepcopy(base.get(section, {}))
-        for k, v in single.get(section, {}).items():
-            # terraform expects variables in a specific type, so need to convert bools to a lower case true/false
-            matched_type = False
-            if v is True:
-                item_vars[k] = "true"
-                matched_type = True
-            if v is False:
-                item_vars[k] = "false"
-                matched_type = True
-            if not matched_type:
-                item_vars[k] = v
+        Before execution it sets up the environment to make all terraform and remote
+        state variables available to the hook via environment vars
+        """
 
-        return item_vars
+        key_replace_items = {
+            " ": "",
+            '"': "",
+            "-": "_",
+            ".": "_",
+        }
+        val_replace_items = {
+            " ": "",
+            '"': "",
+            "\n": "",
+        }
+        local_env = env.copy()
+        hook_dir = f"{working_dir}/hooks"
+        hook_script = None
 
+        for f in os.listdir(hook_dir):
+            # this file format is specifically structured by the prep_def function
+            if os.path.splitext(f)[0] == f"{phase}_{command}":
+                hook_script = f"{hook_dir}/{f}"
+        # this should never have been called if the hook script didn't exist...
+        if hook_script is None:
+            raise HookError(f"hook script missing from {hook_dir}")
 
-def quote_str(string):
-    """Put literal quotes around a string."""
-    return '"{}"'.format(string)
+        # populate environment with terraform vars
+        if os.path.isfile(f"{working_dir}/worker-locals.tf"):
+            # I'm sorry. :-)
+            r = re.compile(
+                r"\s*(?P<item>\w+)\s*\=.+data\.terraform_remote_state\.(?P<state>\w+)\.outputs\.(?P<state_item>\w+)\s*"
+            )
 
+            with open(f"{working_dir}/worker-locals.tf") as f:
+                for line in f:
+                    m = r.match(line)
+                    if m:
+                        item = m.group("item")
+                        state = m.group("state")
+                        state_item = m.group("state_item")
+                    else:
+                        continue
 
-def make_vars(section, single, base=None):
-    """Make a variables dictionary based on default vars, as well as specific vars for an item."""
-    if base is None:
-        base = {}
-    else:
-        base = base.body
+                    state_value = TerraformCommand.get_state_item(
+                        working_dir, env, terraform_path, state, state_item
+                    )
 
-    item_vars = copy.deepcopy(base.get(section, {}))
-    for k, v in single.body.get(section, {}).items():
-        # terraform expects variables in a specific type, so need to convert bools to a lower case true/false
-        matched_type = False
-        if v is True:
-            item_vars[k] = "true"
-            matched_type = True
-        if v is False:
-            item_vars[k] = "false"
-            matched_type = True
-        if not matched_type:
-            item_vars[k] = v
+                    if state_value is not None:
+                        if b64_encode:
+                            state_value = base64.b64encode(
+                                state_value.encode("utf-8")
+                            ).decode()
+                        local_env[f"TF_REMOTE_{state}_{item}".upper()] = state_value
 
-    return item_vars
+        # populate environment with terraform remotes
+        if os.path.isfile(f"{working_dir}/worker.auto.tfvars"):
+            with open(f"{working_dir}/worker.auto.tfvars") as f:
+                for line in f:
+                    tf_var = line.split("=")
+
+                    # strip bad names out for env var settings
+                    for k, v in key_replace_items.items():
+                        tf_var[0] = tf_var[0].replace(k, v)
+
+                    for k, v in val_replace_items.items():
+                        tf_var[1] = tf_var[1].replace(k, v)
+
+                    if b64_encode:
+                        tf_var[1] = base64.b64encode(tf_var[1].encode("utf-8")).decode()
+
+                    local_env[f"TF_VAR_{tf_var[0].upper()}"] = tf_var[1]
+        else:
+            click.secho(
+                f"{working_dir}/worker.auto.tfvars not found!", fg="red",
+            )
+
+        # execute the hook
+        (exit_code, stdout, stderr) = TerraformCommand.pipe_exec(
+            f"{hook_script} {phase} {command}", cwd=hook_dir, env=local_env,
+        )
+
+        # handle output from hook_script
+        if debug:
+            click.secho(f"exit code: {exit_code}", fg="blue")
+            for line in stdout.decode().splitlines():
+                click.secho(f"stdout: {line}", fg="blue")
+            for line in stderr.decode().splitlines():
+                click.secho(f"stderr: {line}", fg="red")
+
+        if exit_code != 0:
+            raise HookError("hook script {}")
+
+    @staticmethod
+    def pipe_exec(args, stdin=None, cwd=None, env=None):
+        """
+        A function to accept a list of commands and pipe them together.
+
+        Takes optional stdin to give to the first item in the pipe chain.
+        """
+        click.secho(f"args: {args}", fg="yellow")
+        count = 0
+        commands = []
+        if env is None:
+            env = os.environ.copy()
+
+        if not isinstance(args, list):
+            args = [args]
+
+        for i in args:
+            if count == 0:
+                if stdin is None:
+                    commands.append(
+                        subprocess.Popen(
+                            shlex.split(i),
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            cwd=cwd,
+                            env=env,
+                        )
+                    )
+                else:
+                    commands.append(
+                        subprocess.Popen(
+                            shlex.split(i),
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            stdin=subprocess.PIPE,
+                            cwd=cwd,
+                            env=env,
+                        )
+                    )
+            else:
+                commands.append(
+                    subprocess.Popen(
+                        shlex.split(i),
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        stdin=commands[count - 1].stdout,
+                        cwd=cwd,
+                        env=env,
+                    )
+                )
+            count = count + 1
+
+        if stdin is not None:
+            stdin_bytes = stdin.encode()
+            if len(commands) > 1:
+                commands[0].communicate(input=stdin_bytes)
+                stdout, stderr = commands[-1].communicate()
+                commands[-1].wait()
+                returncode = commands[-1].returncode
+            else:
+                stdout, stderr = commands[0].communicate(input=stdin_bytes)
+                commands[0].wait()
+                returncode = commands[0].returncode
+        else:
+            stdout, stderr = commands[-1].communicate()
+            commands[-1].wait()
+            returncode = commands[-1].returncode
+
+        return (returncode, stdout, stderr)
+
+    @staticmethod
+    def check_hooks(phase, working_dir, command):
+        """
+        check_hooks determines if a hook exists for a given operation/definition
+        """
+        hook_dir = f"{working_dir}/hooks"
+        if not os.path.isdir(hook_dir):
+            # there is no hooks dir
+            return False
+        for f in os.listdir(hook_dir):
+            if os.path.splitext(f)[0] == f"{phase}_{command}":
+                if os.access(f"{hook_dir}/{f}"):
+                    return True
+                else:
+                    raise HookError(f"{hook_dir}/{f} exists, but is not executable!")
+        return False
+
+    @staticmethod
+    def get_state_item(working_dir, env, terraform_bin, state, item):
+        """
+        get_state_item returns json encoded output from a terraform remote state
+        """
+        base_dir, _ = os.path.split(working_dir)
+        try:
+            (exit_code, stdout, stderr) = TerraformCommand.pipe_exec(
+                f"{terraform_bin} output -json -no-color {item}",
+                cwd=f"{base_dir}/{state}",
+                env=env,
+            )
+        except FileNotFoundError:
+            # the remote state is not setup, likely do to use of --limit
+            # this is acceptable, and is the responsibility of the hook
+            # to ensure it has all values needed for safe execution
+            return None
+
+        if exit_code != 0:
+            raise HookError(
+                f"Error reading remote state item {state}.{item}, details: {stderr}"
+            )
+
+        if stdout is None:
+            raise HookError(
+                f"Remote state item {state}.{item} is empty; This is completely"
+                " unexpected, failing..."
+            )
+        json_output = json.loads(stdout)
+        return json.dumps(json_output, indent=None, separators=(",", ":"))

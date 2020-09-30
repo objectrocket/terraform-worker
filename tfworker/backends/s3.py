@@ -1,7 +1,7 @@
 import boto3
 import click
 
-from .base import BaseBackend, Backends
+from .base import BaseBackend
 
 
 class S3Backend(BaseBackend):

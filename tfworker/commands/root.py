@@ -9,21 +9,17 @@ import yaml
 
 
 class RootCommand:
-    def __init__(self, args=None, config_file=None, clean=True, base=None):
-        # Wonky trick?
-        if base and isinstance(base, BaseCommand):
-            self = base
-        else:
-            """Setup state with args that are passed."""
-            self.clean = clean
-            self.temp_dir = tempfile.mkdtemp()
-            self.args = self.StateArgs()
+    def __init__(self, args=None, config_file=None, clean=True):
+        """Setup state with args that are passed."""
+        self.clean = clean
+        self.temp_dir = tempfile.mkdtemp()
+        self.args = self.StateArgs()
 
-            if args is not None:
-                self.add_args(args)
+        if args is not None:
+            self.add_args(args)
 
-            if config_file is not None:
-                self.load_config(config_file)
+        if config_file is not None:
+            self.load_config(config_file)
 
     def __del__(self):
         """Cleanup the temporary directory after execution."""

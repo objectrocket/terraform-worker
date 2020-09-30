@@ -15,6 +15,7 @@ class AWSAuthenticator(BaseAuthenticator):
         self.bucket = self._resolve_arg("backend_bucket")
         self.deployment = self._resolve_arg("deployment")
         self.prefix = self._resolve_arg("backend_prefix")
+        self.profile = self._resolve_arg("aws_profile")
         self.region = self._resolve_arg("aws_region")
         self.role_arn = self._resolve_arg("role_arn")
         self.secret_access_key = self._resolve_arg("aws_secret_access_key")
@@ -29,6 +30,9 @@ class AWSAuthenticator(BaseAuthenticator):
             self.prefix = const.DEFAULT_BACKEND_PREFIX.format(
                 deployment=self.deployment
             )
+
+        # HACK
+        _ = self.session
 
     @property
     def _session_state_args(self):
@@ -99,6 +103,18 @@ class AWSAuthenticator(BaseAuthenticator):
                     )
 
         return self._session
+
+    def env(self):
+        result = {}
+        if self.access_key_id:
+            result["AWS_ACCESS_KEY_ID"] = self.access_key_id
+        if self.region:
+            result["AWS_DEFAULT_REGION"] = self.region
+        if self.secret_access_key:
+            result["AWS_SECRET_ACCESS_KEY"] = self.secret_access_key
+        if self.session_token:
+            result["AWS_SESSION_TOKEN"] = self.session_token
+        return result
 
     @staticmethod
     def get_assumed_role_session(

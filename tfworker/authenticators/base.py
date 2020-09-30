@@ -8,6 +8,9 @@ class BaseAuthenticator:
     def _resolve_arg(self, name):
         return getattr(self._args, name) if hasattr(self._args, name) else None
 
+    def env(self):
+        return {}
+
 
 class UnknownAuthenticator(Exception):
     def __init__(self, provider):
