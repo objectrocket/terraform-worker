@@ -2,24 +2,31 @@ import platform
 import re
 import shutil
 import tempfile
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 
 import click
 import yaml
 
 
 class RootCommand:
-    def __init__(self, args=None, config_file=None, clean=True):
+    def __init__(self, args=None, clean=True):
         """Setup state with args that are passed."""
         self.clean = clean
         self.temp_dir = tempfile.mkdtemp()
         self.args = self.StateArgs()
 
+        # Config accessors
+        self.tf = None
+        self._pullup_keys()
+
         if args is not None:
             self.add_args(args)
 
-        if config_file is not None:
-            self.load_config(config_file)
+        if args.get("config_file"):
+            click.secho(
+                "loading config file {}".format(args.get("config_file")), fg="green"
+            )
+            self.load_config(args.get("config_file"))
 
     def __del__(self):
         """Cleanup the temporary directory after execution."""
@@ -40,11 +47,35 @@ class RootCommand:
         try:
             with open(config_file, "r") as cfile:
                 self.config = ordered_config_load(cfile, self.args)
+                click.secho("1")
+
+                # A little arbitrary, but decorate the top two levels
+                # directly on self object
+                self.tf = self.config.get("terraform", OrderedDict())
+                self._pullup_keys()
+                click.secho("2")
+
         except IOError:
             click.secho(
                 "Unable to open configuration file: {}".format(config_file), fg="red"
             )
             raise SystemExit(1)
+
+    def _pullup_keys(self):
+        """_pullup_keys is a utility function to place keys from the loaded config file
+        directly on the RootCommand instance."""
+        for k in [
+            "definitions",
+            "plugins",
+            "providers",
+            "remote_vars",
+            "template_vars",
+            "terraform_vars",
+        ]:
+            if self.tf:
+                setattr(self, f"{k}_odict", self.tf.get(k, OrderedDict()))
+            else:
+                setattr(self, f"{k}_odict", None)
 
     class StateArgs:
         """A class to hold arguments in the state for easier access."""

@@ -1,46 +1,55 @@
+from collections import OrderedDict
 import click
 
 from tfworker.authenticators import AuthenticatorsCollection
+from tfworker.backends import select_backend
 from tfworker.definitions import DefinitionsCollection
 from tfworker.plugins import PluginsCollection
 from tfworker.providers import ProvidersCollection
 
 
 class BaseCommand:
-    def __init__(self, rootc, *args, **kwargs):
+    def __init__(
+        self, rootc, deployment="undefined", limit=None, plan_for="apply", **kwargs
+    ):
         self._version = None
         self._providers = None
         self._definitions = None
         self._backend = None
         self._plugins = None
+        self._terraform_vars = OrderedDict()
+        self._remote_vars = OrderedDict()
+        self._local_vars = OrderedDict()
 
         self._temp_dir = rootc.temp_dir
         self._repository_path = rootc.args.repository_path
-        self._authenticators = AuthenticatorsCollection(rootc)
+        click.secho(f"kwwargs: {kwargs}", fg="yellow")
+        self._authenticators = AuthenticatorsCollection(
+            rootc.args, deployment=deployment, **kwargs
+        )
 
-        click.secho("loading config file {}".format(rootc.args.config_file), fg="green")
-        rootc.load_config(rootc.args.config_file)
-
-        # HACKIE HACKHACK
-        click.secho(f"kwargs: {kwargs}")
         rootc.clean = kwargs.get("clean", True)
 
-    def parse_config(self, tf):
-        for k, v in tf.items():
-            if k == "providers":
-                self._providers = ProvidersCollection(v, self._authenticators)
-            elif k == "definitions":
-                self._definitions = DefinitionsCollection(
-                    v,
-                    self._deployment,
-                    self._limit,
-                    self._plan_for,
-                    self._providers,
-                    self._repository_path,
-                    self._temp_dir,
-                )
-            elif k == "plugins":
-                self._plugins = PluginsCollection(v, self._temp_dir)
+        self._providers = ProvidersCollection(
+            rootc.providers_odict, self._authenticators
+        )
+        self._definitions = DefinitionsCollection(
+            rootc.definitions_odict,
+            deployment,
+            limit,
+            plan_for,
+            self._providers,
+            self._repository_path,
+            rootc,
+            self._temp_dir,
+        )
+        self._plugins = PluginsCollection(rootc.plugins_odict, self._temp_dir)
+        import pdb
+
+        pdb.set_trace()
+        self._backend = select_backend(
+            rootc.args.backend, deployment, self._authenticators, self._definitions,
+        )
 
     @property
     def providers(self):

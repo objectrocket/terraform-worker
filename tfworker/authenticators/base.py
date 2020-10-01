@@ -1,7 +1,7 @@
 class BaseAuthenticator:
     tag = "base"
 
-    def __init__(self, state_args, *args, **kwargs):
+    def __init__(self, state_args, **kwargs):
         self._args = state_args
         self.clean = kwargs.get("clean")
 

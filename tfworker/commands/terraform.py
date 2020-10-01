@@ -9,7 +9,6 @@ import subprocess
 import click
 
 from tfworker.commands.base import BaseCommand
-from tfworker.backends import select_backend
 
 
 class HookError(Exception):
@@ -26,37 +25,23 @@ class TerraformError(Exception):
 
 class TerraformCommand(BaseCommand):
     def __init__(self, rootc, *args, **kwargs):
-        super(TerraformCommand, self).__init__(rootc, *args, **kwargs)
-
-        self._b64_encode = kwargs.get("b64_encode")
-        self._destroy = kwargs.get("destroy")
-        self._deployment = kwargs.get("deployment")
-        self._limit = kwargs.get("limit")
-        self._show_output = kwargs.get("show_output")
-        self._terraform_bin = kwargs.get("terraform_bin")
         self._tf_apply = kwargs.get("tf_apply")
-
-        if self._limit:
-            click.secho(f"we got limit: {self._limit}", fg="yellow")
-
-        self._plan_for = "destroy" if kwargs.get("destroy") else "apply"
-        self._limit = kwargs.get("limit")
-
-        # HACK JESSE: This is a compromise. It would have been nice to
-        # put this call in the base constructor but it depends on params
-        # from the sub-command
-        self.parse_config(rootc.config["terraform"])
-
-        self._backend = select_backend(
-            rootc.args.backend,
-            self._deployment,
-            self._authenticators,
-            self._definitions,
-        )
-
+        self._destroy = kwargs.get("destroy")
         if self._tf_apply and self._destroy:
             click.secho("can not apply and destroy at the same time", fg="red")
             raise SystemExit(1)
+
+        self._b64_encode = kwargs.get("b64_encode")
+        self._deployment = kwargs.get("deployment")
+        self._show_output = kwargs.get("show_output")
+        self._terraform_bin = kwargs.get("terraform_bin")
+
+        self._plan_for = "destroy" if kwargs.get("destroy") else "apply"
+        super(TerraformCommand, self).__init__(rootc, plan_for=self._plan_for, **kwargs)
+
+    @property
+    def plan_for(self):
+        return self._plan_for
 
     def prep_modules(self):
         """Puts the modules sub directories into place."""
@@ -73,11 +58,12 @@ class TerraformCommand(BaseCommand):
         )
 
     def exec(self):
+
         for definition in self.definitions:
             # execute = False
             # copy definition files / templates etc.
             click.secho(f"preparing definition: {definition.tag}", fg="green")
-            definition.prep(self._backend)
+            definition.prep(self._backend,)
             # run terraform init
             try:
                 self._run(definition, "init", debug=self._show_output)

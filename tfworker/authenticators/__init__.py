@@ -21,8 +21,10 @@ ALL = [AWSAuthenticator, GoogleAuthenticator]
 
 
 class AuthenticatorsCollection(collections.abc.Mapping):
-    def __init__(self, state):
-        self._authenticators = dict([(auth.tag, auth(state.args)) for auth in ALL])
+    def __init__(self, state_args, **kwargs):
+        self._authenticators = dict(
+            [(auth.tag, auth(state_args, **kwargs)) for auth in ALL]
+        )
 
     def __len__(self):
         return len(self._authenticators)

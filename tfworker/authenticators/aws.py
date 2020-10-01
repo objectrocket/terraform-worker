@@ -1,4 +1,5 @@
 import boto3
+import click
 
 from .base import BaseAuthenticator
 from tfworker import constants as const
@@ -7,19 +8,21 @@ from tfworker import constants as const
 class AWSAuthenticator(BaseAuthenticator):
     tag = "aws"
 
-    def __init__(self, state_args, *args, **kwargs):
-        super(AWSAuthenticator, self).__init__(state_args, *args, **kwargs)
+    def __init__(self, state_args, **kwargs):
+        super(AWSAuthenticator, self).__init__(state_args, **kwargs)
 
         self.access_key_id = self._resolve_arg("aws_access_key_id")
         self.backend_region = self._resolve_arg("backend_region")
         self.bucket = self._resolve_arg("backend_bucket")
-        self.deployment = self._resolve_arg("deployment")
         self.prefix = self._resolve_arg("backend_prefix")
         self.profile = self._resolve_arg("aws_profile")
         self.region = self._resolve_arg("aws_region")
         self.role_arn = self._resolve_arg("role_arn")
         self.secret_access_key = self._resolve_arg("aws_secret_access_key")
         self.session_token = self._resolve_arg("aws_session_token")
+
+        click.secho(f"authenticator args: {kwargs}", fg="yellow")
+        self.deployment = kwargs.get("deployment")
 
         self._account_id = None
         self._backend_session = None

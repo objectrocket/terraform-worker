@@ -2,30 +2,32 @@ import boto3
 import click
 
 from .base import BaseBackend
+from tfworker.constants import DEFAULT_BACKEND_PREFIX
 
 
 class S3Backend(BaseBackend):
     tag = "s3"
     auth_tag = "aws"
 
-    def __init__(self, deployment, authenticators, definitions):
-        self._authenticator = authenticators.get(self.auth_tag)
+    def __init__(self, authenticators, definitions, deployment=None):
+        self._authenticator = authenticators[self.auth_tag]
         self._definitions = definitions
-        self._deployment = deployment
-
-        self.backend_prefix = self._authenticator.prefix
-        self.backend_region = self._authenticator.region
+        self._deployment = "undefined"
+        if deployment:
+            self._deployment = deployment
 
         # Create locking table for aws backend
-        # TODO(jwiles)
-        if False:
-            self.create_table(
-                f"terraform-{deployment}",
-                self._authenticator.backend_region,
-                self._authenticator.access_key_id,
-                self._authenticator.secret_access_token,
-                self._authenticator.session_token,
-            )
+
+        click.secho(
+            f"Creating backend locking table: terraform-{deployment}", fg="yellow"
+        )
+        self.create_table(
+            f"terraform-{deployment}",
+            self._authenticator.backend_region,
+            self._authenticator.access_key_id,
+            self._authenticator.secret_access_key,
+            self._authenticator.session_token,
+        )
 
     @staticmethod
     def create_table(
@@ -73,7 +75,7 @@ class S3Backend(BaseBackend):
         state_config = []
         state_config.append("terraform {")
         state_config.append('  backend "s3" {')
-        state_config.append(f'    region = "{self._authenticator.region}"')
+        state_config.append(f'    region = "{self._authenticator.backend_region}"')
         state_config.append(f'    bucket = "{self._authenticator.bucket}"')
         state_config.append(
             f'    key = "{self._authenticator.prefix}/{name}/terraform.tfstate"'
@@ -94,7 +96,9 @@ class S3Backend(BaseBackend):
             )
             remote_data_config.append('  backend = "s3"')
             remote_data_config.append("  config = {")
-            remote_data_config.append(f'    region = "{self._authenticator.region}"')
+            remote_data_config.append(
+                f'    region = "{self._authenticator.backend_region}"'
+            )
             remote_data_config.append(f'    bucket = "{self._authenticator.bucket}"')
             remote_data_config.append(
                 "    key ="

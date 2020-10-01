@@ -5,10 +5,11 @@ class GCSBackend(BaseBackend):
     tag = "gcs"
     auth_tag = "google"
 
-    def __init__(self, defployment, authenticators, definitions):
-        self._authenticator = authenticators.get(self.auth_tag)
+    def __init__(self, authenticators, definitions, deployment=None):
+        self._authenticator = authenticators[self.auth_tag]
         self._definitions = definitions
-        self._deployment = deployment
+        if deployment:
+            self._deployment = deployment
 
     def hcl(self, name):
         state_config = []

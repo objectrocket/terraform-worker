@@ -5,6 +5,6 @@ from .gcs import GCSBackend  # noqa
 
 def select_backend(backend, deployment, authenticators, definitions):
     if backend == Backends.s3:
-        return S3Backend(deployment, authenticators, definitions)
+        return S3Backend(authenticators, definitions, deployment=deployment)
     elif backend == Backends.gcs:
-        return GCSBackend(deployment, authenticators, definitions)
+        return GCSBackend(authenticators, definitions, deployment=deployment)
