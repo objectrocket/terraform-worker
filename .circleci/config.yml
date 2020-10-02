@@ -61,7 +61,6 @@ workflows:
   lint_and_test:
     jobs:
       - lint_and_test:
-          context: tfworker-list-test
           filters:
             tags:
               ignore:
