@@ -1,8 +1,6 @@
-import copy
 import filecmp
 import glob
 import os
-import sys
 from unittest import mock
 
 import pytest

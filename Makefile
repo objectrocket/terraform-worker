@@ -4,7 +4,7 @@ init:
 default: lint test
 
 lint:
-	poetry run --all-files
+	poetry run flake8 tfworker tests
 
 format:
 	poetry run black tfworker tests
@@ -12,4 +12,4 @@ format:
 	poetry run isort --recursive tfworker tests
 
 test:
-	poetry run pytest --cov
+	poetry run pytest
