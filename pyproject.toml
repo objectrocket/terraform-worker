@@ -11,6 +11,7 @@ click = "^7.1.2"
 black = "^20.8b1"
 isort = "^5.5.4"
 seed-isort-config = "^2.2.0"
+awscli = "^1.18.152"
 
 [tool.poetry.dev-dependencies]
 ipython = "^7.18.1"

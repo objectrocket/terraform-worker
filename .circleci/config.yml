@@ -23,12 +23,11 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            poetry config http-basic.or-pypi-prod ${OBJECTROCKET_PYPI_USERNAME} ${OBJECTROCKET_PYPI_PASSWORD}
             poetry install
       - run:
           name: Lint
           command: |
-            make SKIP=pre-commit-autoupdate lint
+            make lint
       - run:
           name: Test
           command: |
@@ -62,41 +61,32 @@ workflows:
   lint_and_test:
     jobs:
       - lint_and_test:
-          context: viper-core filters:
+          context:
             tags:
               ignore:
                 - /^[0-9]+.[0-9]+.[0-9]+$/
-                - /^[0-9]+.[0-9]+.[0-9]+-rc[0-9]+$/
-            branches:
-              ignore: develop
-      - helm_lint:
-          context: platform-eng
-          filters:
-            tags:
-              ignore:
-                - /^[0-9]+.[0-9]+.[0-9]+$/
-                - /^[0-9]+.[0-9]+.[0-9]+-rc[0-9]+$/
+                - /^[0-9]+.[0-9]+.[0-9]+rc[0-9]+$/
             branches:
               ignore: develop
 
   # runs on version tags
-  deploy:
-    jobs:
-      - lint_and_test:
-          context: viper-core
-          filters:
-            tags:
-              only:
-                - /^[0-9]+.[0-9]+.[0-9]+$/
-                - /^[0-9]+.[0-9]+.[0-9]+-rc[0-9]+$/
-      - build_deploy:
-          context: viper-core
-          requires:
-            - helm_lint
-          filters:
-            tags:
-              only:
-                - /^[0-9]+.[0-9]+.[0-9]+$/
-                - /^[0-9]+.[0-9]+.[0-9]+-rc[0-9]+$/
-            branches:
-              ignore: /.*/
+  # deploy:
+  #   jobs:
+  #     - lint_and_test:
+  #         context: viper-core
+  #         filters:
+  #           tags:
+  #             only:
+  #               - /^[0-9]+.[0-9]+.[0-9]+$/
+  #               - /^[0-9]+.[0-9]+.[0-9]+-rc[0-9]+$/
+  #     - build_deploy:
+  #         context: viper-core
+  #         requires:
+  #           - helm_lint
+  #         filters:
+  #           tags:
+  #             only:
+  #               - /^[0-9]+.[0-9]+.[0-9]+$/
+  #               - /^[0-9]+.[0-9]+.[0-9]+-rc[0-9]+$/
+  #           branches:
+  #             ignore: /.*/
