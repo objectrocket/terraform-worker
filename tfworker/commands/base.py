@@ -44,9 +44,6 @@ class BaseCommand:
             self._temp_dir,
         )
         self._plugins = PluginsCollection(rootc.plugins_odict, self._temp_dir)
-        import pdb
-
-        pdb.set_trace()
         self._backend = select_backend(
             rootc.args.backend, deployment, self._authenticators, self._definitions,
         )

@@ -25,14 +25,15 @@ class TerraformError(Exception):
 
 class TerraformCommand(BaseCommand):
     def __init__(self, rootc, *args, **kwargs):
-        self._tf_apply = kwargs.get("tf_apply")
         self._destroy = kwargs.get("destroy")
+        self._tf_apply = kwargs.get("tf_apply")
         if self._tf_apply and self._destroy:
             click.secho("can not apply and destroy at the same time", fg="red")
             raise SystemExit(1)
 
         self._b64_encode = kwargs.get("b64_encode")
         self._deployment = kwargs.get("deployment")
+        self._force_apply = kwargs.get("force_apply")
         self._show_output = kwargs.get("show_output")
         self._terraform_bin = kwargs.get("terraform_bin")
 
@@ -58,9 +59,8 @@ class TerraformCommand(BaseCommand):
         )
 
     def exec(self):
-
         for definition in self.definitions:
-            # execute = False
+            execute = False
             # copy definition files / templates etc.
             click.secho(f"preparing definition: {definition.tag}", fg="green")
             definition.prep(self._backend,)
@@ -71,73 +71,58 @@ class TerraformCommand(BaseCommand):
                 click.secho("error running terraform init", fg="red")
                 raise SystemExit(1)
 
-            _ = """
             click.secho("planning definition: {}".format(definition.tag), fg="green")
 
             # run terraform plan
             try:
-                tf.run(
-                    name,
-                    obj.temp_dir,
-                    terraform_bin,
-                    "plan",
-                    key_id=_aws_config.key_id,
-                    key_secret=_aws_config.key_secret,
-                    key_token=_aws_config.session_token,
-                    debug=show_output,
-                    plan_action=plan_for,
-                    b64_encode=b64_encode,
+                self._run(
+                    definition, "plan", debug=self._show_output,
                 )
-            except tf.PlanChange:
+            except PlanChange:
                 execute = True
-            except tf.TerraformError:
+            except TerraformError:
                 click.secho(
-                    "error planning terraform definition: {}!".format(name), fg="red"
+                    "error planning terraform definition: {}!".format(definition.tag),
+                    fg="red",
                 )
                 raise SystemExit(1)
 
-            if force_apply:
+            if self._force_apply:
                 execute = True
 
-            if execute and tf_apply:
-                if force_apply:
+            if execute and self._tf_apply:
+                if self._force_apply:
                     click.secho(
-                        "force apply for {}, applying".format(name), fg="yellow"
+                        f"force apply for {definition.tag}, applying", fg="yellow",
                     )
                 else:
                     click.secho(
-                        "plan changes for {}, applying".format(name), fg="yellow"
+                        f"plan changes for {definition.tag}, applying", fg="yellow",
                     )
-            elif execute and destroy:
-                click.secho("plan changes for {}, destroying".format(name), fg="yellow")
+            elif execute and self._destroy:
+                click.secho(
+                    f"plan changes for {definition.tag}, destroying", fg="yellow",
+                )
             elif not execute:
-                click.secho("no plan changes for {}".format(name), fg="yellow")
+                click.secho(f"no plan changes for {definition.tag}", fg="yellow")
                 continue
 
             try:
-                tf.run(
-                    name,
-                    obj.temp_dir,
-                    terraform_bin,
-                    plan_for,
-                    key_id=_aws_config.key_id,
-                    key_secret=_aws_config.key_secret,
-                    key_token=_aws_config.session_token,
-                    debug=show_output,
-                    b64_encode=b64_encode,
+                self._run(
+                    definition, self._plan_for, debug=self._show_output,
                 )
-            except tf.TerraformError:
+            except TerraformError:
                 click.secho(
-                    "error with terraform {} on definition {}, exiting".format(
-                        plan_for, name
-                    ),
+                    f"error with terraform {self._plan_for} on definition"
+                    f" {definition.tag}, exiting",
                     fg="red",
                 )
                 raise SystemExit(1)
             else:
                 click.secho(
-                    "terraform {} complete for {}".format(plan_for, name), fg="green"
-                )"""
+                    f"terraform {self._plan_for} complete for {definition.tag}",
+                    fg="green",
+                )
 
     def _run(self, definition, command, debug=False, plan_action="init"):
         """Run terraform."""
@@ -433,7 +418,7 @@ class TerraformCommand(BaseCommand):
             return False
         for f in os.listdir(hook_dir):
             if os.path.splitext(f)[0] == f"{phase}_{command}":
-                if os.access(f"{hook_dir}/{f}"):
+                if os.access(f"{hook_dir}/{f}", os.X_OK):
                     return True
                 else:
                     raise HookError(f"{hook_dir}/{f} exists, but is not executable!")

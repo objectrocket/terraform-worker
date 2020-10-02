@@ -25,7 +25,8 @@ class GCSBackend(BaseBackend):
 
     def data_hcl(self, exclude):
         remote_data_config = []
-        for definition in self._definitions:
+        # Call the iter method for explicit control of iteration order
+        for definition in self._definitions.iter():
             if definition.tag == exclude:
                 break
             remote_data_config.append(

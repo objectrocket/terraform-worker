@@ -244,13 +244,7 @@ def dry_run(rootc, *args, **kwargs):
     click.secho("preparing modules", fg="green")
     tfc.prep_modules()
 
-    _ = """import pdb
-
-    pdb.set_trace()
-    print()"""
-
     tfc.exec()
-    print(f"tf_dry_run with: {tfc._plan_for}")
     sys.exit(0)
 
 
