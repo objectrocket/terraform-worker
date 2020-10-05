@@ -4,7 +4,7 @@ init:
 default: lint test
 
 lint:
-	poetry run flake8 tfworker tests
+	poetry run flake8 --ignore E501 tfworker tests
 
 format:
 	poetry run black tfworker tests
