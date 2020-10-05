@@ -14,5 +14,3 @@ A couple of items also rely on vault, such as SSH keys, and token signing roles 
 This code is uploaded just as a proof of concept to share different ways of working with terraform, and managing a set of terraform resources through the lifecycle. It's similar in nature to tools like terragrunt (though that's much more polished, though didn't fit our particular use case!) which aim to allow a set of terraform code to be made more modular and reusable across different environments.
 
 This was built/designed around Terraform 0.11; 0.12 has some minor changes in configurations that would require updates.
-
-Tiny change
