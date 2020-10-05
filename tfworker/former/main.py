@@ -94,7 +94,9 @@ def create_table(
         client.create_table(
             TableName=name,
             KeySchema=[{"AttributeName": table_key, "KeyType": "HASH"}],
-            AttributeDefinitions=[{"AttributeName": table_key, "AttributeType": "S"},],
+            AttributeDefinitions=[
+                {"AttributeName": table_key, "AttributeType": "S"},
+            ],
             ProvisionedThroughput={
                 "ReadCapacityUnits": read_capacity,
                 "WriteCapacityUnits": write_capacity,

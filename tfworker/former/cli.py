@@ -19,17 +19,13 @@ import struct
 import sys
 
 import click
-
-from tfworker import terraform as tf
 from tfworker import constants as const
+from tfworker import terraform as tf
 from tfworker.controller import TerraformController
 from tfworker.main import State, create_table, get_aws_id, get_platform
-from tfworker.providers.awsold import (
-    aws_config,
-    clean_bucket_state,
-    clean_locking_state,
-)
 from tfworker.providers import OldStateError
+from tfworker.providers.awsold import (aws_config, clean_bucket_state,
+                                       clean_locking_state)
 
 DEFAULT_GCP_BUCKET = "tfworker-terraform-states"
 DEFAULT_CONFIG = "{}/worker.yaml".format(os.getcwd())
@@ -77,8 +73,9 @@ def validate_host():
 
     if machine not in supported_machine:
         click.secho(
-            "this application is currently not known to support running on {} machines"
-            .format(machine),
+            "this application is currently not known to support running on {} machines".format(
+                machine
+            ),
             fg="red",
         )
 
@@ -225,7 +222,13 @@ def cli(context, **kwargs):
 @click.argument("deployment", callback=validate_deployment)
 @click.pass_obj
 def clean(
-    obj, gcp_bucket, gcp_prefix, s3_bucket, s3_prefix, limit, deployment,
+    obj,
+    gcp_bucket,
+    gcp_prefix,
+    s3_bucket,
+    s3_prefix,
+    limit,
+    deployment,
 ):  # noqa: E501
     """ clean up terraform state """
     if s3_prefix == DEFAULT_S3_PREFIX:

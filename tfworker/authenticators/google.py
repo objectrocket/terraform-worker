@@ -1,5 +1,6 @@
-from .base import BaseAuthenticator
 from tfworker import constants as const
+
+from .base import BaseAuthenticator
 
 
 class GoogleAuthenticator(BaseAuthenticator):

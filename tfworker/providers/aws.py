@@ -4,7 +4,7 @@ from contextlib import closing
 import click
 from tfworker.providers import StateError, validate_state_empty
 
-from .base import BaseProvider, BackendError, validate_backend_empty
+from .base import BackendError, BaseProvider, validate_backend_empty
 
 
 class AWSProvider(BaseProvider):

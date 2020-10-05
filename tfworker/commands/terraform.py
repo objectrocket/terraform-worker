@@ -7,7 +7,6 @@ import shutil
 import subprocess
 
 import click
-
 from tfworker.commands.base import BaseCommand
 
 
@@ -63,7 +62,9 @@ class TerraformCommand(BaseCommand):
             execute = False
             # copy definition files / templates etc.
             click.secho(f"preparing definition: {definition.tag}", fg="green")
-            definition.prep(self._backend,)
+            definition.prep(
+                self._backend,
+            )
             # run terraform init
             try:
                 self._run(definition, "init", debug=self._show_output)
@@ -76,7 +77,9 @@ class TerraformCommand(BaseCommand):
             # run terraform plan
             try:
                 self._run(
-                    definition, "plan", debug=self._show_output,
+                    definition,
+                    "plan",
+                    debug=self._show_output,
                 )
             except PlanChange:
                 execute = True
@@ -93,15 +96,18 @@ class TerraformCommand(BaseCommand):
             if execute and self._tf_apply:
                 if self._force_apply:
                     click.secho(
-                        f"force apply for {definition.tag}, applying", fg="yellow",
+                        f"force apply for {definition.tag}, applying",
+                        fg="yellow",
                     )
                 else:
                     click.secho(
-                        f"plan changes for {definition.tag}, applying", fg="yellow",
+                        f"plan changes for {definition.tag}, applying",
+                        fg="yellow",
                     )
             elif execute and self._destroy:
                 click.secho(
-                    f"plan changes for {definition.tag}, destroying", fg="yellow",
+                    f"plan changes for {definition.tag}, destroying",
+                    fg="yellow",
                 )
             elif not execute:
                 click.secho(f"no plan changes for {definition.tag}", fg="yellow")
@@ -109,7 +115,9 @@ class TerraformCommand(BaseCommand):
 
             try:
                 self._run(
-                    definition, self._plan_for, debug=self._show_output,
+                    definition,
+                    self._plan_for,
+                    debug=self._show_output,
                 )
             except TerraformError:
                 click.secho(
@@ -175,7 +183,8 @@ class TerraformCommand(BaseCommand):
                 )
         except HookError as e:
             click.secho(
-                f"hook execution error on definition {definition.tag}: {e}", fg="red",
+                f"hook execution error on definition {definition.tag}: {e}",
+                fg="red",
             )
             raise SystemExit(1)
 
@@ -318,12 +327,15 @@ class TerraformCommand(BaseCommand):
                     local_env[f"TF_VAR_{tf_var[0].upper()}"] = tf_var[1]
         else:
             click.secho(
-                f"{working_dir}/worker.auto.tfvars not found!", fg="red",
+                f"{working_dir}/worker.auto.tfvars not found!",
+                fg="red",
             )
 
         # execute the hook
         (exit_code, stdout, stderr) = TerraformCommand.pipe_exec(
-            f"{hook_script} {phase} {command}", cwd=hook_dir, env=local_env,
+            f"{hook_script} {phase} {command}",
+            cwd=hook_dir,
+            env=local_env,
         )
 
         # handle output from hook_script

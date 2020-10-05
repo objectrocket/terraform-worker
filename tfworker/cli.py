@@ -19,7 +19,6 @@ import struct
 import sys
 
 import click
-
 from tfworker import constants as const
 from tfworker.commands import RootCommand, TerraformCommand
 from tfworker.commands.root import get_platform

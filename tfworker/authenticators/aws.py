@@ -1,8 +1,8 @@
 import boto3
 import click
+from tfworker import constants as const
 
 from .base import BaseAuthenticator
-from tfworker import constants as const
 
 
 class AWSAuthenticator(BaseAuthenticator):
@@ -59,7 +59,9 @@ class AWSAuthenticator(BaseAuthenticator):
     def account_id(self):
         if not self._account_id:
             self._account_id = AWSAuthenticator.get_aws_id(
-                self.access_key_id, self.secret_access_key, self.session_token,
+                self.access_key_id,
+                self.secret_access_key,
+                self.session_token,
             )
         return self._account_id
 

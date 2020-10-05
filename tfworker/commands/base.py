@@ -1,6 +1,6 @@
 from collections import OrderedDict
-import click
 
+import click
 from tfworker.authenticators import AuthenticatorsCollection
 from tfworker.backends import select_backend
 from tfworker.definitions import DefinitionsCollection
@@ -45,7 +45,10 @@ class BaseCommand:
         )
         self._plugins = PluginsCollection(rootc.plugins_odict, self._temp_dir)
         self._backend = select_backend(
-            rootc.args.backend, deployment, self._authenticators, self._definitions,
+            rootc.args.backend,
+            deployment,
+            self._authenticators,
+            self._definitions,
         )
 
     @property

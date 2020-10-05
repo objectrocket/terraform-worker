@@ -18,7 +18,6 @@ from .aws import AWSProvider  # noqa
 from .base import UnknownProvider  # noqa
 from .google import GoogleProvider  # noqa
 
-
 ALL = [AWSProvider, GoogleProvider]
 
 

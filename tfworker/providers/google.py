@@ -1,5 +1,6 @@
-from .base import BaseProvider
 from tfworker import constants as const
+
+from .base import BaseProvider
 
 
 class GoogleProvider(BaseProvider):

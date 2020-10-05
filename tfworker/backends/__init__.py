@@ -1,6 +1,6 @@
-from .s3 import S3Backend  # noqa
 from .base import Backends
 from .gcs import GCSBackend  # noqa
+from .s3 import S3Backend  # noqa
 
 
 def select_backend(backend, deployment, authenticators, definitions):

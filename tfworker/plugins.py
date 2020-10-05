@@ -6,7 +6,6 @@ import urllib
 import zipfile
 
 import click
-
 from tfworker.commands.root import get_platform
 
 
