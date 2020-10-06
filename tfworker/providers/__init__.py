@@ -17,6 +17,7 @@ import copy
 
 from .aws import AWSProvider  # noqa
 from .base import UnknownProvider  # noqa
+from .generic import GenericProvider  # noqa
 from .google import GoogleProvider  # noqa
 
 ALL = [AWSProvider, GoogleProvider]
@@ -31,7 +32,7 @@ class ProvidersCollection(collections.abc.Mapping):
                 self._providers[k] = provider_map[k](v, rootc)
 
             except KeyError:
-                raise UnknownProvider(k)
+                self._providers[k] = GenericProvider(v, tag=k)
 
     def __len__(self):
         return len(self._providers)

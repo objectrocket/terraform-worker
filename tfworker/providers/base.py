@@ -22,14 +22,6 @@ class BaseProvider:
         self.vars = body.get("vars", {})
         self.version = self.vars.get("version")
 
-    def tfjson(self):
-        return json.dumps(
-            {"provider": {self.tag: self.vars}},
-            sort_keys=True,
-            indent=4,
-            separators=(",", ": "),
-        )
-
     def hcl(self):
         result = []
         provider_vars = {}
@@ -48,6 +40,10 @@ class BaseProvider:
                 result.append("  {} = {}".format(k, v))
         result.append("}")
         return "\n".join(result)
+
+    def clean(self, deployment, limit, config):
+        """Nothing to do here so far"""
+        pass
 
 
 class UnknownProvider(Exception):

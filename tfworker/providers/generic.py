@@ -15,18 +15,12 @@
 from .base import BaseProvider
 
 
-class GoogleProvider(BaseProvider):
-    tag = "google"
+class GenericProvider(BaseProvider):
+    tag = "worker-generic"
 
-    def __init__(self, body, authenticators, **kwargs):
-        super(GoogleProvider, self).__init__(body)
+    def __init__(self, body, **kwargs):
+        super(GenericProvider, self).__init__(body)
 
-        self._authenticator = authenticators.get(self.tag)
-
-        # if there is a creds file, tuck it into the provider vars
-        if self._authenticator.creds_path:
-            self.vars["credentials"] = f'file("{self._authenticator.creds_path}")'
-
-    def clean(self, deployment, limit, config):
-        """Nothing to do here so far"""
-        pass
+        self.tag = kwargs.get("tag", self.tag)
+        self.vars = body.get("vars", {})
+        self.version = body.get("version")
