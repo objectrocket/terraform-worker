@@ -37,7 +37,7 @@ class TerraformError(Exception):
 
 
 class TerraformCommand(BaseCommand):
-    def __init__(self, rootc, *args, **kwargs):
+    def __init__(self, rootc, **kwargs):
         self._destroy = kwargs.get("destroy")
         self._tf_apply = kwargs.get("tf_apply")
         if self._tf_apply and self._destroy:

@@ -30,9 +30,9 @@ class BaseCommand:
         self._definitions = None
         self._backend = None
         self._plugins = None
+        self._template_vars = OrderedDict()
         self._terraform_vars = OrderedDict()
         self._remote_vars = OrderedDict()
-        self._local_vars = OrderedDict()
 
         self._temp_dir = rootc.temp_dir
         self._repository_path = rootc.args.repository_path
