@@ -36,12 +36,12 @@ class GCSBackend(BaseBackend):
             remote_data_config.append("  config = {")
             remote_data_config.append(f'    bucket = "{self._authenticator.bucket}"')
             remote_data_config.append(
-                f'    prefix = "{self._authenticator.bucket}/{definition.tag}"'
+                f'    prefix = "{self._authenticator.prefix}/{definition.tag}"'
             )
             if self._authenticator.creds_path:
                 remote_data_config.append(
                     f'    credentials = "{self._authenticator.creds_path}"'
                 )
             remote_data_config.append("  }")
-            remote_data_config.append("}\n")
+            remote_data_config.append("}")
         return "\n".join(remote_data_config)

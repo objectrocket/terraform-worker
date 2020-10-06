@@ -2,7 +2,6 @@ import json
 from contextlib import closing
 
 import click
-from tfworker.providers import StateError, validate_state_empty
 
 from .base import BackendError, BaseProvider, validate_backend_empty
 

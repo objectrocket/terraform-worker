@@ -1,6 +1,5 @@
 from collections import OrderedDict
 
-import click
 from tfworker.authenticators import AuthenticatorsCollection
 from tfworker.backends import select_backend
 from tfworker.definitions import DefinitionsCollection
@@ -23,7 +22,6 @@ class BaseCommand:
 
         self._temp_dir = rootc.temp_dir
         self._repository_path = rootc.args.repository_path
-        click.secho(f"kwwargs: {kwargs}", fg="yellow")
         self._authenticators = AuthenticatorsCollection(
             rootc.args, deployment=deployment, **kwargs
         )
@@ -50,6 +48,14 @@ class BaseCommand:
             self._authenticators,
             self._definitions,
         )
+
+    @property
+    def authenticators(self):
+        return self._authenticators
+
+    @property
+    def backend(self):
+        return self._backend
 
     @property
     def providers(self):

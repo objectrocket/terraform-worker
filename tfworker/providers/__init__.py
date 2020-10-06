@@ -53,12 +53,12 @@ def old_validate_backend_region(state):
 
 
 class ProvidersCollection(collections.abc.Mapping):
-    def __init__(self, providers, state):
+    def __init__(self, providers_odict, rootc):
         provider_map = dict([(prov.tag, prov) for prov in ALL])
-        self._providers = copy.deepcopy(providers)
+        self._providers = copy.deepcopy(providers_odict)
         for k, v in self._providers.items():
             try:
-                self._providers[k] = provider_map[k](v, state)
+                self._providers[k] = provider_map[k](v, rootc)
 
             except KeyError:
                 raise UnknownProvider(k)

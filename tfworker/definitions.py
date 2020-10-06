@@ -135,6 +135,7 @@ class Definition:
 
     def make_vars(self, local_vars, global_vars):
         """Make a variables dictionary based on default vars, as well as specific vars for an item."""
+        global_vars = global_vars or collections.OrderedDict()
         item_vars = copy.deepcopy(global_vars)
         for k, v in local_vars.items():
             # terraform expects variables in a specific type, so need to convert bools to a lower case true/false

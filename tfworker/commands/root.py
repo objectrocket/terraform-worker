@@ -2,7 +2,7 @@ import platform
 import re
 import shutil
 import tempfile
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict
 
 import click
 import yaml
@@ -31,7 +31,10 @@ class RootCommand:
     def __del__(self):
         """Cleanup the temporary directory after execution."""
         if self.clean:
-            shutil.rmtree(self.temp_dir)
+            try:
+                shutil.rmtree(self.temp_dir)
+            except Exception:
+                pass
 
     def add_args(self, args):
         """Add a dictionary of args."""
