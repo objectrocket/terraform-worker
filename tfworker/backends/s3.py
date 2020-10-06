@@ -1,6 +1,5 @@
 import boto3
 import click
-from tfworker.constants import DEFAULT_BACKEND_PREFIX
 
 from .base import BaseBackend
 

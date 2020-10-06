@@ -21,10 +21,6 @@ from .google import GoogleProvider  # noqa
 ALL = [AWSProvider, GoogleProvider]
 
 
-class StateError(Exception):
-    pass
-
-
 class ProvidersCollection(collections.abc.Mapping):
     def __init__(self, providers_odict, rootc):
         provider_map = dict([(prov.tag, prov) for prov in ALL])

@@ -4,7 +4,10 @@ from contextlib import closing
 import click
 
 from .base import BackendError, BaseProvider, validate_backend_empty
-from .providers import StateError
+
+
+class StateError(Exception):
+    pass
 
 
 class AWSProvider(BaseProvider):

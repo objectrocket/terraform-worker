@@ -1,4 +1,3 @@
-import click
 from tfworker.commands.base import BaseCommand
 
 
