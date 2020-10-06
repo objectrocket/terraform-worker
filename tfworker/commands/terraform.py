@@ -370,7 +370,6 @@ class TerraformCommand(BaseCommand):
 
         Takes optional stdin to give to the first item in the pipe chain.
         """
-        click.secho(f"args: {args}", fg="yellow")
         count = 0
         commands = []
         if env is None:

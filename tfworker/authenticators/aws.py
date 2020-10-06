@@ -35,7 +35,6 @@ class AWSAuthenticator(BaseAuthenticator):
         self.secret_access_key = self._resolve_arg("aws_secret_access_key")
         self.session_token = self._resolve_arg("aws_session_token")
 
-        click.secho(f"authenticator args: {kwargs}", fg="yellow")
         self.deployment = kwargs.get("deployment")
 
         self._account_id = None
