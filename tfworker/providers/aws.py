@@ -4,6 +4,7 @@ from contextlib import closing
 import click
 
 from .base import BackendError, BaseProvider, validate_backend_empty
+from .providers import StateError
 
 
 class AWSProvider(BaseProvider):
@@ -70,6 +71,29 @@ class AWSProvider(BaseProvider):
                     )
                 }
             )
+
+    def clean(self, deployment, limit, config):
+        if limit:
+            for limit_item in limit:
+                click.secho(
+                    "when using limit, dynamodb tables won't be completely dropped",
+                    fg="yellow",
+                )
+                try:
+                    # the bucket state deployment is part of the s3 prefix
+                    self._clean_bucket_state(config, definition=limit_item)
+                    # deployment name needs specified to determine the dynamo table
+                    self._clean_locking_state(config, deployment, definition=limit_item)
+                except StateError as e:
+                    click.secho("error deleting state: {}".format(e), fg="red")
+                    raise SystemExit(1)
+        else:
+            try:
+                self._clean_bucket_state(config)
+            except StateError as e:
+                click.secho("error deleting state: {}".format(e))
+                raise SystemExit(1)
+            self._clean_locking_state(config, deployment)
 
     def delete_with_versions(self, key):
         """

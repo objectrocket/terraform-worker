@@ -20,7 +20,7 @@ import sys
 
 import click
 from tfworker import constants as const
-from tfworker.commands import RootCommand, TerraformCommand
+from tfworker.commands import CleanCommand, RootCommand, TerraformCommand
 from tfworker.commands.root import get_platform
 
 
@@ -186,6 +186,16 @@ def cli(context, **kwargs):
 
 
 @cli.command()
+@click.option("--limit", help="limit operations to a single definition", multiple=True)
+@click.argument("deployment", callback=validate_deployment)
+@click.pass_obj
+def clean(rootc, *args, **kwargs):  # noqa: E501
+    """ clean up terraform state """
+    # clean just items if limit supplied, or everything if no limit
+    cc = CleanCommand(rootc, *args, **kwargs)
+
+
+@cli.command()
 @click.option(
     "--clean/--no-clean",
     default=True,
@@ -230,7 +240,7 @@ def cli(context, **kwargs):
 @click.option("--limit", help="limit operations to a single definition", multiple=True)
 @click.argument("deployment", callback=validate_deployment)
 @click.pass_obj
-def dry_run(rootc, *args, **kwargs):
+def terraform(rootc, *args, **kwargs):
     """ No do nothing """
     tfc = TerraformCommand(rootc, *args, **kwargs)
 

@@ -21,35 +21,8 @@ from .google import GoogleProvider  # noqa
 ALL = [AWSProvider, GoogleProvider]
 
 
-class OldProviderError(Exception):
+class StateError(Exception):
     pass
-
-
-class OldStateError(Exception):
-    pass
-
-
-def old_validate_state_empty(state):
-    """
-    validate_empty_state ensures that the provided state file
-    is empty
-    """
-
-    try:
-        if len(state["resources"]) > 0:
-            return False
-        else:
-            return True
-    except KeyError:
-        raise OldStateError("resources key does not exist in state!")
-
-
-def old_validate_backend_region(state):
-    """
-    validate_backend_region validates that a statefile
-    was previously used in the region the current
-    deployment is being created for
-    """
 
 
 class ProvidersCollection(collections.abc.Mapping):
