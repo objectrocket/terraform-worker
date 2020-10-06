@@ -34,7 +34,7 @@ class AWSProvider(BaseProvider):
         self.vars = body.get("vars", {})
 
     # Provider-specific methods
-    def clean_bucket_state(self, definition=None):
+    def _clean_bucket_state(self, definition=None):
         """
         clean_state validates all of the terraform states are empty,
         and then removes the backend objects from S3
@@ -48,15 +48,15 @@ class AWSProvider(BaseProvider):
         )
         s3_client = self._authenticator.backend_session.client("s3")
         if definition is None:
-            prefix = self._authenticator.backend_prefix
+            prefix = self._authenticator.prefix
         else:
-            prefix = "{}/{}".format(self._authenticator.backend_prefix, definition)
+            prefix = "{}/{}".format(self._authenticator.prefix, definition)
 
         for s3_object in self.filter_keys(
-            s3_paginator, self._authenticator.backend_bucket, prefix
+            s3_paginator, self._authenticator.bucket, prefix
         ):
             backend_file = s3_client.get_object(
-                Bucket=self._authenticator.backend_bucket, Key=s3_object
+                Bucket=self._authenticator.bucket, Key=s3_object
             )
             body = backend_file["Body"]
             with closing(backend_file["Body"]):
@@ -68,7 +68,7 @@ class AWSProvider(BaseProvider):
             else:
                 raise BackendError("backend at: {} is not empty!".format(s3_object))
 
-    def clean_locking_state(self, deployment, definition=None):
+    def _clean_locking_state(self, deployment, definition=None):
         """
         clean_locking_state when called removes the dynamodb table
         that holds all of the state checksums and locking table
@@ -89,7 +89,7 @@ class AWSProvider(BaseProvider):
                 }
             )
 
-    def clean(self, deployment, limit, config):
+    def clean(self, deployment, limit):
         if limit:
             for limit_item in limit:
                 click.secho(
@@ -98,19 +98,19 @@ class AWSProvider(BaseProvider):
                 )
                 try:
                     # the bucket state deployment is part of the s3 prefix
-                    self._clean_bucket_state(config, definition=limit_item)
+                    self._clean_bucket_state(definition=limit_item)
                     # deployment name needs specified to determine the dynamo table
-                    self._clean_locking_state(config, deployment, definition=limit_item)
+                    self._clean_locking_state(deployment, definition=limit_item)
                 except StateError as e:
                     click.secho("error deleting state: {}".format(e), fg="red")
                     raise SystemExit(1)
         else:
             try:
-                self._clean_bucket_state(config)
+                self._clean_bucket_state()
             except StateError as e:
                 click.secho("error deleting state: {}".format(e))
                 raise SystemExit(1)
-            self._clean_locking_state(config, deployment)
+            self._clean_locking_state(deployment)
 
     def delete_with_versions(self, key):
         """

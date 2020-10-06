@@ -126,8 +126,6 @@ class Definition:
                     )
                 tflocals.write("}\n\n")
 
-        click.secho(f"tag: {self.tag}", fg="yellow")
-        click.secho(f"{backend.hcl(self.tag)}")
         with open("{}/{}".format(str(target), "terraform.tf"), "w+") as tffile:
             tffile.write("{}\n\n".format(self._providers.hcl()))
             tffile.write("{}\n\n".format(backend.hcl(self.tag)))

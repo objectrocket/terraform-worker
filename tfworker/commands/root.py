@@ -64,13 +64,11 @@ class RootCommand:
         try:
             with open(config_file, "r") as cfile:
                 self.config = ordered_config_load(cfile, self.args)
-                click.secho("1")
 
                 # A little arbitrary, but decorate the top two levels
                 # directly on self object
                 self.tf = self.config.get("terraform", OrderedDict())
                 self._pullup_keys()
-                click.secho("2")
 
         except IOError:
             click.secho(

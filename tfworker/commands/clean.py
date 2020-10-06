@@ -24,4 +24,4 @@ class CleanCommand(BaseCommand):
 
     def exec(self):
         for prov in self._providers:
-            prov.clean(self._deployment, self._limit, self._config)
+            prov.clean(self._deployment, self._limit)
