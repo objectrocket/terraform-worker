@@ -2,7 +2,6 @@ import filecmp
 from unittest import mock
 
 import pytest
-
 from tfworker.commands.terraform import TerraformCommand
 
 

@@ -2,7 +2,6 @@ import collections
 import os
 
 import pytest
-
 from tfworker.definitions import Definition
 
 

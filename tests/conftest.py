@@ -1,12 +1,12 @@
 import collections
-from unittest import mock
 import os
+from unittest import mock
 
 import pytest
 import tfworker
-import tfworker.providers
 import tfworker.commands.base
 import tfworker.commands.root
+import tfworker.providers
 
 
 @pytest.fixture
