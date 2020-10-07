@@ -72,7 +72,7 @@ class TerraformCommand(BaseCommand):
         )
 
     def exec(self):
-        for definition in self.definitions:
+        for definition in self.definitions.limited():
             execute = False
             # copy definition files / templates etc.
             click.secho(f"preparing definition: {definition.tag}", fg="green")
@@ -94,6 +94,7 @@ class TerraformCommand(BaseCommand):
                     definition,
                     "plan",
                     debug=self._show_output,
+                    plan_action=self._plan_for,
                 )
             except PlanChange:
                 execute = True

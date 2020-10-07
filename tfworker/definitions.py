@@ -35,6 +35,7 @@ class Definition:
         providers,
         repository_path,
         temp_dir,
+        limited=False,
     ):
         self.tag = definition
         self._body = body
@@ -53,10 +54,15 @@ class Definition:
         self._repository_path = repository_path
         self._providers = providers
         self._temp_dir = temp_dir
+        self._limited = limited
 
     @property
     def body(self):
         return self._body
+
+    @property
+    def limited(self):
+        return self._limited
 
     @property
     def path(self):
@@ -180,8 +186,6 @@ class DefinitionsCollection(collections.abc.Mapping):
         self._plan_for = plan_for
         self._definitions = collections.OrderedDict()
         for definition, body in definitions.items():
-            if limit and definition not in limit:
-                continue
             self._definitions[definition] = Definition(
                 definition,
                 body,
@@ -192,6 +196,7 @@ class DefinitionsCollection(collections.abc.Mapping):
                 providers,
                 repository_path,
                 temp_dir,
+                True if limit and definition in limit else False,
             )
 
     def __len__(self):
@@ -203,13 +208,16 @@ class DefinitionsCollection(collections.abc.Mapping):
         return self._definitions[value]
 
     def __iter__(self):
-        return self.iter(honor_destroy=True)
+        return self._iter(honor_destroy=True)
 
-    def iter(self, honor_destroy=False):
+    def _iter(self, honor_destroy=False):
         if honor_destroy:
             if self._plan_for == "destroy":
                 return iter(reversed(list(self._definitions.values())))
         return iter(self._definitions.values())
+
+    def limited(self):
+        return iter(filter(lambda d: d.limited, self._iter(True)))
 
     @property
     def body(self):

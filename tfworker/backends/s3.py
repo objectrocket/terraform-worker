@@ -102,7 +102,7 @@ class S3Backend(BaseBackend):
     def data_hcl(self, exclude):
         remote_data_config = []
         # Call the iter method for explicit control of iteration order
-        for definition in self._definitions.iter():
+        for definition in self._definitions:
             if definition.tag == exclude:
                 break
             remote_data_config.append(
