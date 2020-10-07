@@ -51,35 +51,31 @@ class PluginsCollection(collections.abc.Mapping):
         repositories/sources from the critical path.
         """
         opsys, machine = get_platform()
-        _platform = "{}_{}".format(opsys, machine)
+        _platform = f"{opsys}_{machine}"
 
-        plugin_dir = "{}/terraform-plugins".format(self._temp_dir)
+        plugin_dir = f"{self._temp_dir}/terraform-plugins"
         if not os.path.isdir(plugin_dir):
             os.mkdir(plugin_dir)
 
         for name, details in self._plugins.items():
             # Get platform and strip 2 off linux 2.x kernels
-            file_name = "terraform-provider-{}_{}_{}.zip".format(
-                name, details["version"], _platform
+            file_name = (
+                f"terraform-provider-{name}_{details['version']}_{_platform}.zip"
             )
-            uri = "https://releases.hashicorp.com/terraform-provider-{}/{}/{}".format(
-                name, details["version"], file_name
-            )
+            uri = f"https://releases.hashicorp.com/terraform-provider-{name}/{details['version']}/{file_name}"
             click.secho(
-                "getting plugin: {} version {} from {}".format(
-                    name, details["version"], uri
-                ),
+                f"getting plugin: {name} version {details['version']} from {uri}",
                 fg="yellow",
             )
 
             with urllib.request.urlopen(uri) as response, open(
-                "{}/{}".format(plugin_dir, file_name), "wb"
+                f"{plugin_dir}/{file_name}", "wb"
             ) as plug_file:
                 shutil.copyfileobj(response, plug_file)
-            with zipfile.ZipFile("{}/{}".format(plugin_dir, file_name)) as zip_file:
-                zip_file.extractall("{}/{}".format(plugin_dir, _platform))
-            os.remove("{}/{}".format(plugin_dir, file_name))
+            with zipfile.ZipFile(f"{plugin_dir}/{file_name}") as zip_file:
+                zip_file.extractall(f"{plugin_dir}/{_platform}")
+            os.remove(f"{plugin_dir}/{file_name}")
 
-            files = glob.glob("{}/{}/terraform-provider*".format(plugin_dir, _platform))
+            files = glob.glob(f"{plugin_dir}/{_platform}/terraform-provider*")
             for afile in files:
                 os.chmod(afile, 0o755)

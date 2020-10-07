@@ -86,7 +86,7 @@ class TerraformCommand(BaseCommand):
                 click.secho("error running terraform init", fg="red")
                 raise SystemExit(1)
 
-            click.secho("planning definition: {}".format(definition.tag), fg="green")
+            click.secho(f"planning definition: {definition.tag}", fg="green")
 
             # run terraform plan
             try:
@@ -100,7 +100,7 @@ class TerraformCommand(BaseCommand):
                 execute = True
             except TerraformError:
                 click.secho(
-                    "error planning terraform definition: {}!".format(definition.tag),
+                    f"error planning terraform definition: {definition.tag}!",
                     fg="red",
                 )
                 raise SystemExit(1)

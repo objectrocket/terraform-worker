@@ -88,63 +88,53 @@ class Definition:
 
         # Put terraform files in place
         for tf in repo.glob("*.tf"):
-            shutil.copy("{}".format(str(tf)), str(target))
+            shutil.copy(str(tf), str(target))
         for tf in repo.glob("*.tfvars"):
-            shutil.copy("{}".format(str(tf)), str(target))
-        if os.path.isdir(str(repo) + "/templates".replace("//", "/")):
-            shutil.copytree(
-                "{}/templates".format(str(repo)), "{}/templates".format(str(target))
-            )
-        if os.path.isdir(str(repo) + "/policies".replace("//", "/")):
-            shutil.copytree(
-                "{}/policies".format(str(repo)), "{}/policies".format(str(target))
-            )
-        if os.path.isdir(str(repo) + "/scripts".replace("//", "/")):
-            shutil.copytree(
-                "{}/scripts".format(str(repo)), "{}/scripts".format(str(target))
-            )
-        if os.path.isdir(str(repo) + "/hooks".replace("//", "/")):
-            shutil.copytree(
-                "{}/hooks".format(str(repo)), "{}/hooks".format(str(target))
-            )
-        if os.path.isdir(str(repo) + "/repos".replace("//", "/")):
-            shutil.copytree(
-                "{}/repos".format(str(repo)), "{}/repos".format(str(target))
-            )
+            shutil.copy(str(tf), str(target))
+        if os.path.isdir(f"{repo}/templates".replace("//", "/")):
+            shutil.copytree(f"{repo}/templates", f"{target}/templates")
+
+        if os.path.isdir(f"{repo}/policies".replace("//", "/")):
+            shutil.copytree(f"{repo}/policies", f"{target}/policies")
+
+        if os.path.isdir(f"{repo}/scripts".replace("//", "/")):
+            shutil.copytree(f"{repo}/scripts", f"{target}/scripts")
+
+        if os.path.isdir(f"{repo}/hooks".replace("//", "/")):
+            shutil.copytree(f"{repo}/hooks", f"{target}/hooks")
+
+        if os.path.isdir(f"{repo}/repos".replace("//", "/")):
+            shutil.copytree(f"{repo}/repos", f"{target}/repos")
 
         # Render jinja templates and put in place
         env = jinja2.Environment(loader=jinja2.FileSystemLoader)
 
         for j2 in repo.glob("*.j2"):
             contents = env.get_template(str(j2)).render(**self._template_vars)
-            with open("{}/{}".format(str(target), str(j2)), "w+") as j2_file:
+            with open(f"{target}/{j2}", "w+") as j2_file:
                 j2_file.write(contents)
 
         # Create local vars from remote data sources
         if len(list(self._remote_vars.keys())) > 0:
-            with open(
-                "{}/{}".format(str(target), "worker-locals.tf"), "w+"
-            ) as tflocals:
+            with open(f"{target}/worker-locals.tf", "w+") as tflocals:
                 tflocals.write("locals {\n")
                 for k, v in self._remote_vars.items():
-                    tflocals.write(
-                        '  {} = "${{data.terraform_remote_state.{}}}"\n'.format(k, v)
-                    )
+                    tflocals.write(f'  {k} = "${{data.terraform_remote_state.{v}}}"\n')
                 tflocals.write("}\n\n")
 
-        with open("{}/{}".format(str(target), "terraform.tf"), "w+") as tffile:
-            tffile.write("{}\n\n".format(self._providers.hcl()))
-            tffile.write("{}\n\n".format(backend.hcl(self.tag)))
-            tffile.write("{}\n\n".format(backend.data_hcl(self.tag)))
+        with open(f"{target}/terraform.tf", "w+") as tffile:
+            tffile.write(f"{self._providers.hcl()}\n\n")
+            tffile.write(f"{backend.hcl(self.tag)}\n\n")
+            tffile.write(backend.data_hcl(self.tag))
 
         # Create the variable definitions
-        with open("{}/{}".format(str(target), "worker.auto.tfvars"), "w+") as varfile:
+        with open(f"{target}/worker.auto.tfvars", "w+") as varfile:
             for k, v in self._terraform_vars.items():
                 if isinstance(v, list):
-                    varstring = "[{}]".format(", ".join(map(Definition.quote_str, v)))
-                    varfile.write("{} = {}\n".format(k, varstring))
+                    varstring = f'[{", ".join(map(Definition.quote_str, v))}]'
+                    varfile.write(f"{k} = {varstring}\n")
                 else:
-                    varfile.write('{} = "{}"\n'.format(k, v))
+                    varfile.write(f'{k} = "{v}"\n')
 
     @staticmethod
     def quote_str(some_string):

@@ -37,9 +37,7 @@ class RootCommand:
             self.add_args(args)
 
         if args.get("config_file"):
-            click.secho(
-                "loading config file {}".format(args.get("config_file")), fg="green"
-            )
+            click.secho(f"loading config file {args.get('config_file')}", fg="green")
             self.load_config(args.get("config_file"))
 
     def __del__(self):
@@ -71,9 +69,7 @@ class RootCommand:
                 self._pullup_keys()
 
         except IOError:
-            click.secho(
-                "Unable to open configuration file: {}".format(config_file), fg="red"
-            )
+            click.secho(f"Unable to open configuration file: {config_file}", fg="red")
             raise SystemExit(1)
 
     def _pullup_keys(self):
@@ -136,7 +132,7 @@ def replace_vars(var, args):
     try:
         var = getattr(args, match.group(1).replace("-", "_"))
     except AttributeError:
-        raise (ValueError("substitution not found for {}".format(var)))
+        raise (ValueError(f"substitution not found for {var}"))
     return var
 
 

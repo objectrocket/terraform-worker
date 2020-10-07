@@ -50,7 +50,7 @@ class AWSProvider(BaseProvider):
         if definition is None:
             prefix = self._authenticator.prefix
         else:
-            prefix = "{}/{}".format(self._authenticator.prefix, definition)
+            prefix = f"{self._authenticator.prefix}/{definition}"
 
         for s3_object in self.filter_keys(
             s3_paginator, self._authenticator.bucket, prefix
@@ -64,9 +64,9 @@ class AWSProvider(BaseProvider):
 
             if validate_backend_empty(backend):
                 self.delete_with_versions(s3_object)
-                click.secho("backend file removed: {}".format(s3_object), fg="yellow")
+                click.secho(f"backend file removed: {s3_object}", fg="yellow")
             else:
-                raise BackendError("backend at: {} is not empty!".format(s3_object))
+                raise BackendError(f"backend at: {s3_object} is not empty!")
 
     def _clean_locking_state(self, deployment, definition=None):
         """
@@ -76,16 +76,14 @@ class AWSProvider(BaseProvider):
         """
         dynamo_client = self.state_session.resource("dynamodb")
         if definition is None:
-            table = dynamo_client.Table("terraform-{}".format(deployment))
+            table = dynamo_client.Table(f"terraform-{deployment}")
             table.delete()
         else:
             # delete only the entry for a single state resource
-            table = dynamo_client.Table("terraform-{}".format(deployment))
+            table = dynamo_client.Table(f"terraform-{deployment}")
             table.delete_item(
                 Key={
-                    "LockID": "{}/{}/{}/terraform.tfstate-md5".format(
-                        self.state_bucket, self.state_prefix, definition
-                    )
+                    "LockID": f"{self._authenticator.bucket}/{self._authenticator.prefix}/{definition}/terraform.tfstate-md5"
                 }
             )
 
@@ -102,13 +100,13 @@ class AWSProvider(BaseProvider):
                     # deployment name needs specified to determine the dynamo table
                     self._clean_locking_state(deployment, definition=limit_item)
                 except StateError as e:
-                    click.secho("error deleting state: {}".format(e), fg="red")
+                    click.secho(f"error deleting state: {e}", fg="red")
                     raise SystemExit(1)
         else:
             try:
                 self._clean_bucket_state()
             except StateError as e:
-                click.secho("error deleting state: {}".format(e))
+                click.secho(f"error deleting state: {e}")
                 raise SystemExit(1)
             self._clean_locking_state(deployment)
 

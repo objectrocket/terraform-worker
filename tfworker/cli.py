@@ -51,16 +51,14 @@ def validate_host():
 
     if opsys not in supported_opsys:
         click.secho(
-            "this application is currently not known to support {}".format(opsys),
+            f"this application is currently not known to support {opsys}",
             fg="red",
         )
         raise SystemExit(2)
 
     if machine not in supported_machine:
         click.secho(
-            "this application is currently not known to support running on {} machines".format(
-                machine
-            ),
+            f"this application is currently not known to support running on {machine} machines",
             fg="red",
         )
 
@@ -179,9 +177,7 @@ def cli(context, **kwargs):
     try:
         context.obj = RootCommand(args=kwargs)
     except FileNotFoundError:
-        click.secho(
-            "configuration file {} not found".format(config_file), fg="red", err=True
-        )
+        click.secho(f"configuration file {config_file} not found", fg="red", err=True)
         raise SystemExit(1)
 
 
@@ -245,8 +241,8 @@ def terraform(rootc, *args, **kwargs):
     """ No do nothing """
     tfc = TerraformCommand(rootc, *args, **kwargs)
 
-    click.secho("building deployment {}".format(kwargs.get("deployment")), fg="green")
-    click.secho("using temporary Directory: {}".format(tfc.temp_dir), fg="yellow")
+    click.secho(f"building deployment {kwargs.get('deployment')}", fg="green")
+    click.secho(f"using temporary Directory: {tfc.temp_dir}", fg="yellow")
 
     # common setup required for all definitions
     click.secho("downloading plugins", fg="green")

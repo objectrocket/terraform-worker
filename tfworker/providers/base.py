@@ -30,12 +30,12 @@ class BaseProvider:
             """No provider vars were set."""
             pass
 
-        result.append('provider "{}" {{'.format(self.tag))
+        result.append(f'provider "{self.tag}" {{')
         for k, v in provider_vars.items():
             if v and '"' not in v:
-                result.append('  {} = "{}"'.format(k, v))
+                result.append(f'  {k} = "{v}"')
             else:
-                result.append("  {} = {}".format(k, v))
+                result.append(f"  {k} = {v}")
         result.append("}")
         return "\n".join(result)
 
