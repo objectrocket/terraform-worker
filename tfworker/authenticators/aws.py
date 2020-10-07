@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import boto3
-import click
 from tfworker import constants as const
 
 from .base import BaseAuthenticator
