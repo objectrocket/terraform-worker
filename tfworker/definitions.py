@@ -208,16 +208,16 @@ class DefinitionsCollection(collections.abc.Mapping):
         return self._definitions[value]
 
     def __iter__(self):
-        return self._iter(honor_destroy=True)
+        return self.iter(honor_destroy=True)
 
-    def _iter(self, honor_destroy=False):
+    def iter(self, honor_destroy=False):
         if honor_destroy:
             if self._plan_for == "destroy":
                 return iter(reversed(list(self._definitions.values())))
         return iter(self._definitions.values())
 
     def limited(self):
-        return iter(filter(lambda d: d.limited, self._iter(True)))
+        return iter(filter(lambda d: d.limited, self.iter(honor_destroy=True)))
 
     @property
     def body(self):
