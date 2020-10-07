@@ -34,7 +34,7 @@ class BaseProvider:
 
         result.append('provider "{}" {{'.format(self.tag))
         for k, v in provider_vars.items():
-            if '"' not in v:
+            if v and '"' not in v:
                 result.append('  {} = "{}"'.format(k, v))
             else:
                 result.append("  {} = {}".format(k, v))

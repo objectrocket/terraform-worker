@@ -26,7 +26,3 @@ class GoogleProvider(BaseProvider):
         # if there is a creds file, tuck it into the provider vars
         if self._authenticator.creds_path:
             self.vars["credentials"] = f'file("{self._authenticator.creds_path}")'
-
-    def clean(self, deployment, limit, config):
-        """Nothing to do here so far"""
-        pass

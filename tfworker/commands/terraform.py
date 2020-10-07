@@ -202,6 +202,9 @@ class TerraformCommand(BaseCommand):
             )
             raise SystemExit(1)
 
+        click.secho(
+            f"cmd: {self._terraform_bin} {command} {command_params}", fg="yellow"
+        )
         (exit_code, stdout, stderr) = TerraformCommand.pipe_exec(
             f"{self._terraform_bin} {command} {command_params}",
             cwd=working_dir,

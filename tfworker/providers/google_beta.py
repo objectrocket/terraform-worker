@@ -12,19 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
+from .base import BaseProvider
 
 
-class BaseBackend:
-    tag = "base"
+class GoogleBetaProvider(BaseProvider):
+    tag = "google-beta"
 
-    def hcl(self, name):
-        raise NotImplementedError
+    def __init__(self, body, authenticators, **kwargs):
+        super(GoogleBetaProvider, self).__init__(body)
 
-    def data_hcl(self, exclude):
-        raise NotImplementedError
+        self._authenticator = authenticators.get("google")
 
-
-class Backends:
-    s3 = "s3"
-    gcs = "gcs"
+        # if there is a creds file, tuck it into the provider vars
+        if self._authenticator.creds_path:
+            self.vars["credentials"] = f'file("{self._authenticator.creds_path}")'

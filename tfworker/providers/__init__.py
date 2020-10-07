@@ -19,8 +19,9 @@ from .aws import AWSProvider  # noqa
 from .base import UnknownProvider  # noqa
 from .generic import GenericProvider  # noqa
 from .google import GoogleProvider  # noqa
+from .google_beta import GoogleBetaProvider  # noqa
 
-ALL = [AWSProvider, GoogleProvider]
+ALL = [AWSProvider, GoogleProvider, GoogleBetaProvider]
 
 
 class ProvidersCollection(collections.abc.Mapping):

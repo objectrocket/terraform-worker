@@ -25,12 +25,13 @@ class GoogleAuthenticator(BaseAuthenticator):
 
         self.bucket = self._resolve_arg("backend_bucket")
         self.creds_path = self._resolve_arg("gcp_creds_path")
-        self.deployment = self._resolve_arg("deployment")
         self.prefix = self._resolve_arg("backend_prefix")
         self.project = self._resolve_arg("gcp_project")
         self.region = self._resolve_arg("gcp_region")
 
+        self.deployment = kwargs.get("deployment")
+
         if self.prefix == const.DEFAULT_BACKEND_PREFIX:
-            self.gcp_prefix = const.DEFAULT_BACKEND_PREFIX.format(
+            self.prefix = const.DEFAULT_BACKEND_PREFIX.format(
                 deployment=self.deployment
             )
