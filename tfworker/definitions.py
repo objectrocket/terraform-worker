@@ -93,7 +93,7 @@ class Definition:
 
         # Put terraform files in place
         for tf in repo.glob("*.tf"):
-            if tf in const.RESERVED_FILES:
+            if tf.name in const.RESERVED_FILES:
                 raise ReservedFileError(f"{tf} is not allowed")
             shutil.copy(str(tf), str(target))
 
