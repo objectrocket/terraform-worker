@@ -103,7 +103,7 @@ class TerraformCommand(BaseCommand):
                     f"error planning terraform definition: {definition.tag}!",
                     fg="red",
                 )
-                raise SystemExit(1)
+                raise SystemExit(2)
 
             if self._force_apply:
                 execute = True
@@ -140,7 +140,7 @@ class TerraformCommand(BaseCommand):
                     f" {definition.tag}, exiting",
                     fg="red",
                 )
-                raise SystemExit(1)
+                raise SystemExit(2)
             else:
                 click.secho(
                     f"terraform {self._plan_for} complete for {definition.tag}",
@@ -160,7 +160,6 @@ class TerraformCommand(BaseCommand):
             params["plan"] += " -destroy"
 
         env = os.environ.copy()
-        # TODO(jwiles): Is this safe?
         for auth in self._authenticators:
             env.update(auth.env())
 
@@ -189,7 +188,6 @@ class TerraformCommand(BaseCommand):
                 TerraformCommand.hook_exec(
                     "pre",
                     command,
-                    definition.tag,
                     working_dir,
                     env,
                     self._terraform_bin,
@@ -201,7 +199,7 @@ class TerraformCommand(BaseCommand):
                 f"hook execution error on definition {definition.tag}: {e}",
                 fg="red",
             )
-            raise SystemExit(1)
+            raise SystemExit(2)
 
         click.secho(
             f"cmd: {self._terraform_bin} {command} {command_params}", fg="yellow"
@@ -243,7 +241,6 @@ class TerraformCommand(BaseCommand):
                 TerraformCommand.hook_exec(
                     "post",
                     command,
-                    definition.tag,
                     working_dir,
                     env,
                     self._terraform_bin,
@@ -254,14 +251,13 @@ class TerraformCommand(BaseCommand):
             click.secho(
                 f"hook execution error on definition {definition.tag}: {e}", fg="red"
             )
-            raise SystemExit(1)
+            raise SystemExit(2)
         return True
 
     @staticmethod
     def hook_exec(
         phase,
         command,
-        name,
         working_dir,
         env,
         terraform_path,

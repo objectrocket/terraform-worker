@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import shlex
+
 import boto3
 from tfworker import constants as const
 
@@ -121,13 +123,13 @@ class AWSAuthenticator(BaseAuthenticator):
     def env(self):
         result = {}
         if self.access_key_id:
-            result["AWS_ACCESS_KEY_ID"] = self.access_key_id
+            result["AWS_ACCESS_KEY_ID"] = shlex.quote(self.access_key_id)
         if self.region:
-            result["AWS_DEFAULT_REGION"] = self.region
+            result["AWS_DEFAULT_REGION"] = shlex.quote(self.region)
         if self.secret_access_key:
-            result["AWS_SECRET_ACCESS_KEY"] = self.secret_access_key
+            result["AWS_SECRET_ACCESS_KEY"] = shlex.quote(self.secret_access_key)
         if self.session_token:
-            result["AWS_SESSION_TOKEN"] = self.session_token
+            result["AWS_SESSION_TOKEN"] = shlex.quote(self.session_token)
         return result
 
     @staticmethod

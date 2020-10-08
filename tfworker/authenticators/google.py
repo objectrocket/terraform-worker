@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import shlex
+
 from tfworker import constants as const
 
 from .base import BaseAuthenticator
@@ -35,3 +37,9 @@ class GoogleAuthenticator(BaseAuthenticator):
             self.prefix = const.DEFAULT_BACKEND_PREFIX.format(
                 deployment=self.deployment
             )
+
+    def env(self):
+        result = {}
+        if self.creds_path:
+            result["GOOGLE_APPLICATION_CREDENTIALS"] = shlex.quote(self.creds_path)
+        return result

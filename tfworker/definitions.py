@@ -21,6 +21,11 @@ from pathlib import Path
 
 import click
 import jinja2
+from tfworker import constants as const
+
+
+class ReservedFileError(Exception):
+    pass
 
 
 class Definition:
@@ -88,9 +93,13 @@ class Definition:
 
         # Put terraform files in place
         for tf in repo.glob("*.tf"):
+            if tf in const.RESERVED_FILES:
+                raise ReservedFileError(f"{tf} is not allowed")
             shutil.copy(str(tf), str(target))
+
         for tf in repo.glob("*.tfvars"):
             shutil.copy(str(tf), str(target))
+
         if os.path.isdir(f"{repo}/templates".replace("//", "/")):
             shutil.copytree(f"{repo}/templates", f"{target}/templates")
 
