@@ -12,7 +12,7 @@ format: init
 	poetry run isort tfworker tests
 
 test: init
-	poetry run pytest
+	poetry run pytest --cov=tfworker 
 
 clean:
 	rm -rf build dist .eggs terraform_worker.egg-info
