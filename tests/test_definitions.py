@@ -18,7 +18,7 @@ import os
 import pytest
 from tfworker.definitions import Definition
 
-EXPECTED_TEST_BLOCK = """resource "null_resource" "test_a" { 
+EXPECTED_TEST_BLOCK = """resource "null_resource" "test_a" {
 
 }
 """
