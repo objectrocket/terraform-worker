@@ -161,7 +161,7 @@ class TerraformCommand(BaseCommand):
 
     def _run(self, definition, command, debug=False, plan_action="init"):
         """Run terraform."""
-        if self._tf_version_major == 12:
+        if self._tf_version_major >= 12:
             params = {
                 "init": f"-input=false -no-color -plugin-dir={self._temp_dir}/terraform-plugins",
                 "plan": "-input=false -detailed-exitcode -no-color",
