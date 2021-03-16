@@ -12,7 +12,77 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import io
+import json
+import os
+import re
+
 from .base import BaseBackend
+
+from google.cloud import storage
+
+REGION_REGEX = r'tag[0-9]+-[0-9]+-[0-9]+(-rc[0-9]+)?-(.+)-kubeflow'
+
+
+def region_from_kubeflow_gcp_state(state):
+    try:
+        for resource in state['resources']:
+            if resource['type'] == 'google_storage_bucket':
+                for instance in resource['instances']:
+                    return instance['attributes']['location'].lower()
+    except KeyError:
+        pass
+    return None
+
+
+def region_from_iap_config_state(state):
+    try:
+        for resource in state['resources']:
+            if resource['type'] == 'terraform_remote_state':
+                for instance in resource['instances']:
+                    bucket = instance['attributes']['outputs']['value']['default_pipelines_bucket']
+                    m = re.search(REGION_REGEX, bucket)
+                    if m is not None:
+                        return m.group(2)
+    except KeyError:
+        pass
+    return None
+
+
+def region_from_network_state(state):
+    try:
+        for resource in state['resources']:
+            if resource['type'] == 'terraform_remote_state':
+                for instance in resource['instances']:
+                    try:
+                        bucket = instance['attributes']['outputs']['value']['default_pipelines_bucket']
+                        m = re.search(REGION_REGEX, bucket)
+                        if m is not None:
+                            return m.group(2)
+                    except KeyError:
+                        continue
+    except KeyError:
+        pass
+    return None
+
+
+def region_from_kubeflow_charts(state):
+    try:
+        for resource in state['resources']:
+            if resource['type'] == 'google_compute_zones':
+                for instance in resource['instances']:
+                    return instance['attributes']['region'].lower()
+    except KeyError:
+        pass
+    return None
+
+
+state_extractors = {
+    'network': region_from_network_state,
+    'iap_config': region_from_iap_config_state,
+    'kubeflow_gcp': region_from_kubeflow_gcp_state,
+    'kubeflow_charts': region_from_kubeflow_charts,
+}
 
 
 class GCSBackend(BaseBackend):
@@ -24,6 +94,29 @@ class GCSBackend(BaseBackend):
         self._definitions = definitions
         if deployment:
             self._deployment = deployment
+
+    def ensure_correct_region(self):
+        os.environ.update(self._authenticator.env())
+        prefix = f'{self._authenticator.prefix}/'
+        client = storage.Client()
+        bucket = client.get_bucket(self._authenticator.bucket)
+        blobs = list(client.list_blobs(bucket, prefix=prefix))
+        state_region = None
+        for blob in blobs:
+            if not blob.name.endswith(".tfstate"):
+                continue
+            definition = blob.name.split('/')[-2]
+            if definition in state_extractors:
+                text = io.BytesIO()
+                client.download_blob_to_file(blob, text)
+                text.seek(0)
+                state_region = state_extractors[definition](json.load(text))
+                if state_region is not None:
+                    break
+
+        if state_region != self._authenticator.region:
+            raise ValueError(f'Region {self._authenticator.region} does not match state region {state_region}')
+        return
 
     def hcl(self, name):
         state_config = []

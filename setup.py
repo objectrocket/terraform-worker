@@ -24,6 +24,7 @@ setup(
         "Jinja2",
         "PyYAML",
         "requests",
+        "google-cloud-storage",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",

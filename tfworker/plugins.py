@@ -58,7 +58,7 @@ class PluginsCollection(collections.abc.Mapping):
         but rather have them in a local repository or host them in s3, and get
         them from an internal s3 endpoint so no transit charges are incurred.
         Ideally these would be stored between runs, and only downloaded if the
-        versions have changed. In production try  to remove all all external
+        versions have changed. In production try to remove all external
         repositories/sources from the critical path.
         """
         opsys, machine = get_platform()

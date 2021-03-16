@@ -89,7 +89,7 @@ class TerraformCommand(BaseCommand):
         except ValueError as e:
             click.secho(f"Error with supplied limit: {e}", fg="red")
             raise SystemExit(1)
-
+        self._backend.ensure_correct_region()
         for definition in def_iter:
             execute = False
             # copy definition files / templates etc.
