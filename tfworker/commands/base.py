@@ -71,7 +71,6 @@ class BaseCommand:
             if base_url:
                 vals['baseURL'] = base_url
             plugins_odict[str(provider)] = vals
-        print(f'plugins_odict: {plugins_odict}')
         self._plugins = PluginsCollection(plugins_odict, self._temp_dir)
         self._backend = select_backend(
             rootc.args.backend,
