@@ -71,16 +71,19 @@ class TerraformCommand(BaseCommand):
     def prep_modules(self):
         """Puts the modules sub directories into place."""
         mod_source = f"{self._repository_path}/terraform-modules".replace("//", "/")
-        mod_destination = f"{self._temp_dir}/terraform-modules".replace("//", "/")
-        click.secho(
-            f"copying modules from {mod_source} to {mod_destination}", fg="yellow"
-        )
-        shutil.copytree(
-            mod_source,
-            mod_destination,
-            symlinks=True,
-            ignore=shutil.ignore_patterns("test", ".terraform", "terraform.tfstate*"),
-        )
+        if os.path.exists(mod_source) and os.path.isdir(mod_source):
+            mod_destination = f"{self._temp_dir}/terraform-modules".replace("//", "/")
+            click.secho(
+                f"copying modules from {mod_source} to {mod_destination}", fg="yellow"
+            )
+            shutil.copytree(
+                mod_source,
+                mod_destination,
+                symlinks=True,
+                ignore=shutil.ignore_patterns(
+                    "test", ".terraform", "terraform.tfstate*"
+                ),
+            )
 
     def exec(self):
         try:
