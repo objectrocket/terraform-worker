@@ -70,7 +70,7 @@ class TestPlugins:
     @pytest.mark.depends(on="get_url")
     def test_plugin_download(self, rootc):
         plugins = tfworker.plugins.PluginsCollection(
-            {"null": {"version": "2.1.2"}}, rootc.temp_dir
+            {"null": {"version": "2.1.2"}}, rootc.temp_dir, 12
         )
         plugins.download()
         files = glob.glob(
