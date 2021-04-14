@@ -14,6 +14,7 @@
 
 import collections
 import glob
+import json
 import os
 import shutil
 import urllib
@@ -59,27 +60,24 @@ class PluginsCollection(collections.abc.Mapping):
         but rather have them in a local repository or host them in s3, and get
         them from an internal s3 endpoint so no transit charges are incurred.
         Ideally these would be stored between runs, and only downloaded if the
-        versions have changed. In production try  to remove all all external
+        versions have changed. In production try to remove all all external
         repositories/sources from the critical path.
         """
         opsys, machine = get_platform()
         _platform = f"{opsys}_{machine}"
 
         plugin_dir = f"{self._temp_dir}/terraform-plugins"
-        # HACK JESSE: temporarily assume hashicorp registry
-        registry_host_dir = os.path.join(plugin_dir, "registry.terraform.io")
-        maintainer_dir = os.path.join(registry_host_dir, "hashicorp")
 
         if not os.path.isdir(plugin_dir):
             os.mkdir(plugin_dir)
-            click.secho(f"version major: {self._tf_version_major}", fg="bright_blue")
-            click.secho(
-                f"type version major: {type(self._tf_version_major)}", fg="bright_blue"
-            )
-            if self._tf_version_major >= 13:
-                os.makedirs(maintainer_dir)
-
         for name, details in self._plugins.items():
+            source = PluginSource(name, details)
+            host_dir = os.path.join(plugin_dir, source.host)
+            namespace_dir = os.path.join(host_dir, source.namespace)
+
+            if self._tf_version_major >= 13:
+                os.makedirs(namespace_dir)
+
             uri = get_url(name, details)
             file_name = uri.split("/")[-1]
 
@@ -101,7 +99,7 @@ class PluginsCollection(collections.abc.Mapping):
                 os.chmod(afile, 0o755)
                 filename = os.path.basename(afile)
                 if self._tf_version_major >= 13:
-                    provider_dir = os.path.join(maintainer_dir, name)
+                    provider_dir = os.path.join(namespace_dir, name)
                     version_dir = os.path.join(provider_dir, details["version"])
                     platform_dir = os.path.join(version_dir, _platform)
                     os.makedirs(platform_dir)
@@ -143,3 +141,37 @@ def get_url(name, details):
     base_uri = details.get("baseURL", default_base_url).rstrip("/")
 
     return f"{base_uri}/{file_name}"
+
+
+class PluginSource:
+    """
+    Utility object for divining the local module path details from a provider
+
+    Customized source fields are expected in the form: <namespace>/<provider>
+    The host can also be specified: <host>/<namespace>/<provider>
+
+    Where the host is NOT specified, registry.terraform.io is assumed.
+    """
+
+    def __init__(self, provider, details):
+        # Set sensible defaults
+        self.provider = provider
+        self.namespace = "hashicorp"
+        self.host = "registry.terraform.io"
+        source = details.get("source")
+
+        # Parse the parts if source defined
+        if source:
+            items = ["provider", "namespace", "host"]
+            parts = source.split("/")
+            if len(parts) > 3:
+                raise Exception(
+                    f"Unable to parse source with more than three segments: {parts}"
+                )
+            # pop the items in reverse order until there's nothing left
+            for item in items:
+                if parts:
+                    setattr(self, item, parts.pop())
+
+    def __repr__(self):
+        return json.dumps(self.__dict__)
