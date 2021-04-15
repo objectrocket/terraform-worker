@@ -25,6 +25,10 @@ from tenacity import retry, stop_after_attempt, wait_chain, wait_fixed
 from tfworker.commands.root import get_platform
 
 
+class PluginSourceParseException(Exception):
+    pass
+
+
 class PluginsCollection(collections.abc.Mapping):
     def __init__(self, body, temp_dir, tf_version_major):
         self._plugins = body
@@ -150,27 +154,24 @@ class PluginSource:
     """
 
     def __init__(self, provider, details):
-        try:
-            # Set sensible defaults
-            self.provider = provider
-            self.namespace = "hashicorp"
-            self.host = "registry.terraform.io"
-            source = details.get("source")
+        # Set sensible defaults
+        self.provider = provider
+        self.namespace = "hashicorp"
+        self.host = "registry.terraform.io"
+        source = details.get("source")
 
-            # Parse the parts if source defined
-            if source:
-                items = ["provider", "namespace", "host"]
-                parts = source.split("/")
-                if len(parts) > 3:
-                    raise Exception(
-                        f"Unable to parse source with more than three segments: {parts}"
-                    )
-                # pop the items in reverse order until there's nothing left
-                for item in items:
-                    if parts:
-                        setattr(self, item, parts.pop())
-        except Exception as e:
-            click.secho(f"PluginSource error: {e}", fg="red")
+        # Parse the parts if source defined
+        if source:
+            items = ["provider", "namespace", "host"]
+            parts = source.split("/")
+            if len(parts) > 3:
+                raise PluginSourceParseException(
+                    f"Unable to parse source with more than three segments: {parts}"
+                )
+            # pop the items in reverse order until there's nothing left
+            for item in items:
+                if parts:
+                    setattr(self, item, parts.pop())
 
     def __repr__(self):
         return json.dumps(self.__dict__)

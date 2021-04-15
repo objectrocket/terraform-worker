@@ -131,7 +131,7 @@ class TestPlugins:
                 "registry.terraform.io",
                 "hashicorp",
                 "bar",
-                pytest.raises(Exception),
+                pytest.raises(tfworker.plugins.PluginSourceParseException),
             ),
         ],
     )
