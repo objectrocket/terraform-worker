@@ -76,7 +76,7 @@ class PluginsCollection(collections.abc.Mapping):
             namespace_dir = os.path.join(host_dir, source.namespace)
 
             if self._tf_version_major >= 13:
-                os.makedirs(namespace_dir)
+                os.makedirs(namespace_dir, exist_ok=True)
 
             uri = get_url(name, details)
             file_name = uri.split("/")[-1]
@@ -102,7 +102,7 @@ class PluginsCollection(collections.abc.Mapping):
                     provider_dir = os.path.join(namespace_dir, name)
                     version_dir = os.path.join(provider_dir, details["version"])
                     platform_dir = os.path.join(version_dir, _platform)
-                    os.makedirs(platform_dir)
+                    os.makedirs(platform_dir, exist_ok=True)
                     os.rename(afile, os.path.join(platform_dir, filename))
                 else:
                     os.rename(afile, f"{plugin_dir}/{filename}")
@@ -154,24 +154,27 @@ class PluginSource:
     """
 
     def __init__(self, provider, details):
-        # Set sensible defaults
-        self.provider = provider
-        self.namespace = "hashicorp"
-        self.host = "registry.terraform.io"
-        source = details.get("source")
+        try:
+            # Set sensible defaults
+            self.provider = provider
+            self.namespace = "hashicorp"
+            self.host = "registry.terraform.io"
+            source = details.get("source")
 
-        # Parse the parts if source defined
-        if source:
-            items = ["provider", "namespace", "host"]
-            parts = source.split("/")
-            if len(parts) > 3:
-                raise Exception(
-                    f"Unable to parse source with more than three segments: {parts}"
-                )
-            # pop the items in reverse order until there's nothing left
-            for item in items:
-                if parts:
-                    setattr(self, item, parts.pop())
+            # Parse the parts if source defined
+            if source:
+                items = ["provider", "namespace", "host"]
+                parts = source.split("/")
+                if len(parts) > 3:
+                    raise Exception(
+                        f"Unable to parse source with more than three segments: {parts}"
+                    )
+                # pop the items in reverse order until there's nothing left
+                for item in items:
+                    if parts:
+                        setattr(self, item, parts.pop())
+        except Exception as e:
+            click.secho(f"PluginSource error: {e}", fg="red")
 
     def __repr__(self):
         return json.dumps(self.__dict__)

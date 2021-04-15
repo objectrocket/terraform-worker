@@ -70,6 +70,9 @@ class BaseCommand:
             base_url = rootc.providers_odict[provider].get("baseURL")
             if base_url:
                 vals["baseURL"] = base_url
+            source = rootc.providers_odict[provider].get("source")
+            if source:
+                vals["source"] = source
             plugins_odict[str(provider)] = vals
         self._plugins = PluginsCollection(
             plugins_odict, self._temp_dir, tf_version_major
