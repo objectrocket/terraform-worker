@@ -71,13 +71,6 @@ class PluginsCollection(collections.abc.Mapping):
         if not os.path.isdir(plugin_dir):
             os.mkdir(plugin_dir)
         for name, details in self._plugins.items():
-            source = PluginSource(name, details)
-            host_dir = os.path.join(plugin_dir, source.host)
-            namespace_dir = os.path.join(host_dir, source.namespace)
-
-            if self._tf_version_major >= 13:
-                os.makedirs(namespace_dir, exist_ok=True)
-
             uri = get_url(name, details)
             file_name = uri.split("/")[-1]
 
@@ -99,6 +92,9 @@ class PluginsCollection(collections.abc.Mapping):
                 os.chmod(afile, 0o755)
                 filename = os.path.basename(afile)
                 if self._tf_version_major >= 13:
+                    source = PluginSource(name, details)
+                    host_dir = os.path.join(plugin_dir, source.host)
+                    namespace_dir = os.path.join(host_dir, source.namespace)
                     provider_dir = os.path.join(namespace_dir, name)
                     version_dir = os.path.join(provider_dir, details["version"])
                     platform_dir = os.path.join(version_dir, _platform)
