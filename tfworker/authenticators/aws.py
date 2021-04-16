@@ -80,7 +80,7 @@ class AWSAuthenticator(BaseAuthenticator):
                 if self.backend_region == self.region:
                     self._backend_session = self._session
                 else:
-                    # Explicitly do NOT pass the profile here since the sts session
+                    # Explicitly do NOT pass the profile here since the assumed role
                     # has no local profile
                     self._backend_session = boto3.Session(
                         region_name=self.backend_region,
