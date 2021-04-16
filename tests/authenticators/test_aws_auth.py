@@ -26,7 +26,6 @@ def cli_args(aws_access_key_id, aws_secret_access_key):
     return {
         "aws_access_key_id": aws_access_key_id,
         "aws_secret_access_key": aws_secret_access_key,
-        "aws_session_token": "foo-session-token",
         "aws_default_region": "us-east-1",
     }
 
@@ -65,6 +64,7 @@ class TestAWSAuthenticator:
         auth = AWSAuthenticator(state_args, deployment="deployfu")
         assert auth.access_key_id == aws_access_key_id
         assert auth.secret_access_key == aws_secret_access_key
+        assert auth.session_token is None
 
     @mock_sts
     def test_with_access_key_pair_creds_and_role_arn(
@@ -75,6 +75,8 @@ class TestAWSAuthenticator:
         # but rather one that moto generates
         assert auth.access_key_id.startswith("ASIA")
         assert auth.secret_access_key != aws_secret_access_key
+        # Taking as a cue: https://github.com/spulec/moto/blob/master/tests/test_sts/test_sts.py#L636
+        assert auth.session_token.startswith("FQoGZXIvYXdzE")
 
     @patch("botocore.session.Session.get_scoped_config")
     @patch("botocore.session.Session.get_credentials")
@@ -94,3 +96,4 @@ class TestAWSAuthenticator:
         assert auth.profile == "testing"
         assert auth.access_key_id == aws_credentials_instance.access_key
         assert auth.secret_access_key == aws_credentials_instance.secret_key
+        assert auth.session_token is None
