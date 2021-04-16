@@ -32,7 +32,7 @@ class AWSAuthenticator(BaseAuthenticator):
         self.prefix = self._resolve_arg("backend_prefix")
         self.profile = self._resolve_arg("aws_profile")
         self.region = self._resolve_arg("aws_region")
-        self.role_arn = self._resolve_arg("role_arn")
+        self.role_arn = self._resolve_arg("aws_role_arn")
         self.secret_access_key = self._resolve_arg("aws_secret_access_key")
         self.session_token = self._resolve_arg("aws_session_token")
 
@@ -56,11 +56,12 @@ class AWSAuthenticator(BaseAuthenticator):
             )
 
             if not self.role_arn:
-                # if a role was not provided, need to ensure credentials areset
+                # if a role was not provided, need to ensure credentials are set
                 # in the config, these will come from the session
-                self.access_key_id = self._session.get_credentials().access_key
-                self.secret_access_key = self._session.get_credentials().secret_key
-                self.session_token = self._session.get_credentials().token
+                creds = self._session.get_credentials()
+                self.access_key_id = creds.access_key
+                self.secret_access_key = creds.secret_key
+                self.session_token = creds.token
 
                 if self.backend_region == self.region:
                     self._backend_session = self._session
@@ -79,6 +80,8 @@ class AWSAuthenticator(BaseAuthenticator):
                 if self.backend_region == self.region:
                     self._backend_session = self._session
                 else:
+                    # Explicitly do NOT pass the profile here since the sts session
+                    # has no local profile
                     self._backend_session = boto3.Session(
                         region_name=self.backend_region,
                         aws_access_key_id=self.access_key_id,
@@ -106,6 +109,7 @@ class AWSAuthenticator(BaseAuthenticator):
 
     @property
     def account_id(self):
+        """ Nothing uses this?  OK to remove? """
         if not self._account_id:
             self._account_id = AWSAuthenticator.get_aws_id(
                 self.access_key_id,
