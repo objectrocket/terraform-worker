@@ -108,17 +108,6 @@ class AWSAuthenticator(BaseAuthenticator):
         return state_args
 
     @property
-    def account_id(self):
-        """ Nothing uses this?  OK to remove? """
-        if not self._account_id:
-            self._account_id = AWSAuthenticator.get_aws_id(
-                self.access_key_id,
-                self.secret_access_key,
-                self.session_token,
-            )
-        return self._account_id
-
-    @property
     def backend_session(self):
         return self._backend_session
 
@@ -155,14 +144,3 @@ class AWSAuthenticator(BaseAuthenticator):
         )
 
         return new_session, role_creds
-
-    @staticmethod
-    def get_aws_id(key_id, key_secret, session_token=None):
-        """Return the AWS account ID."""
-        client = boto3.client(
-            "sts",
-            aws_access_key_id=key_id,
-            aws_secret_access_key=key_secret,
-            aws_session_token=session_token,
-        )
-        return client.get_caller_identity()["Account"]
