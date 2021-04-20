@@ -120,8 +120,8 @@ class Definition:
         with open(f"{target}/terraform.tf", "w+") as tffile:
             tffile.write(f"{self._providers.hcl()}\n\n")
             required_providers = ""
-            if self._tf_version_major >= 13:
-                if self._providers.has_required_providers:
+            if self._tf_version_major <= 12:
+                if False:  # self._providers.has_required_providers:
                     required_providers = f"\n\n{self._providers.required_providers()}"
             tffile.write(
                 TERRAFORM_TPL.format(
