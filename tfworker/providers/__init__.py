@@ -31,15 +31,17 @@ REQUIRED_PROVIDERS_TPL = """\
 
 
 class ProvidersCollection(collections.abc.Mapping):
-    def __init__(self, providers_odict, rootc):
+    def __init__(self, providers_odict, authenticators, tf_version_major):
         provider_map = dict([(prov.tag, prov) for prov in ALL])
         self._providers = copy.deepcopy(providers_odict)
         for k, v in self._providers.items():
             try:
-                self._providers[k] = provider_map[k](v, rootc)
+                self._providers[k] = provider_map[k](
+                    v, authenticators, tf_version_major
+                )
 
             except KeyError:
-                self._providers[k] = GenericProvider(v, tag=k)
+                self._providers[k] = GenericProvider(v, tf_version_major, tag=k)
 
     def __len__(self):
         return len(self._providers)
@@ -54,10 +56,7 @@ class ProvidersCollection(collections.abc.Mapping):
 
     @property
     def has_required_providers(self):
-        return (
-            len([prov.required() for _, prov in self._providers.items() if prov.source])
-            > 0
-        )
+        return len([True for _, prov in self._providers.items() if prov.source]) > 0
 
     def hcl(self):
         return "\n".join([prov.hcl() for _, prov in self._providers.items()])
