@@ -62,14 +62,14 @@ class Definition:
             body.get("terraform_vars", collections.OrderedDict()), global_terraform_vars
         )
 
-        self._provider_excludes = body.get("provider_excludes", [])
-
         self._deployment = deployment
         self._repository_path = repository_path
         self._providers = providers
         self._temp_dir = temp_dir
         self._tf_version_major = tf_version_major
         self._limited = limited
+
+        self._target = f"{self._temp_dir}/definitions/{self.tag}".replace("//", "/")
 
     @property
     def body(self):
@@ -83,9 +83,25 @@ class Definition:
     def path(self):
         return self._path
 
+    @property
+    def provider_names(self):
+        """ Extract only the providers used by a definition """
+        result = set(self._providers.keys())
+        if self._tf_version_major >= 13:
+            version_path = os.path.join(self._target, "versions.tf")
+            if os.path.exists(version_path) and os.path.isfile(version_path):
+                with open(version_path, "r") as reader:
+                    vinfo = hcl2.load(reader)
+                    tf_element = vinfo.get("terraform", [None]).pop()
+                    if tf_element:
+                        rp_element = tf_element.get("required_providers", [None]).pop()
+                        if rp_element:
+                            required_providers = set(rp_element.keys())
+                            result = result.intersection(required_providers)
+        return result
+
     def prep(self, backend):
         """ prepare the definitions for running """
-        target = f"{self._temp_dir}/definitions/{self.tag}".replace("//", "/")
 
         try:
             c = CopyFactory.create(
@@ -103,23 +119,9 @@ class Definition:
         remote_options = dict(self.body.get("remote_path_options", {}))
 
         try:
-            c.copy(destination=target, **remote_options)
+            c.copy(destination=self._target, **remote_options)
         except FileExistsError as e:
             raise ReservedFileError(e)
-
-        # TODO how to make a set of includes
-        providers_to_include = set(self._providers.keys())
-        if self._tf_version_major >= 13:
-            version_path = os.path.join(target, "versions.tf")
-            if os.path.exists(version_path) and os.path.isfile(version_path):
-                with open(version_path, "rb") as reader:
-                    vinfo = hcl2.load(reader)
-                    required_providers = set(
-                        vinfo.get("terraform", {}).get("required_providers", {}).keys()
-                    )
-                    providers_to_include = providers_to_include.intersection(
-                        required_providers
-                    )
 
         # Prepare variables
         self._template_vars["deployment"] = self._deployment
@@ -127,7 +129,7 @@ class Definition:
 
         # Create local vars from remote data sources
         if len(list(self._remote_vars.keys())) > 0:
-            with open(f"{target}/worker-locals.tf", "w+") as tflocals:
+            with open(f"{self._target}/worker-locals.tf", "w+") as tflocals:
                 tflocals.write("locals {\n")
                 for k, v in self._remote_vars.items():
                     tflocals.write(f"  {k} = data.terraform_remote_state.{v}\n")
@@ -135,13 +137,13 @@ class Definition:
 
         # create remote data sources, and required providers
         remotes = list(map(lambda x: x.split(".")[0], self._remote_vars.values()))
-        with open(f"{target}/terraform.tf", "w+") as tffile:
-            tffile.write(f"{self._providers.hcl(providers_to_include)}\n\n")
+        with open(f"{self._target}/terraform.tf", "w+") as tffile:
+            tffile.write(f"{self._providers.hcl(self.provider_names)}\n\n")
             tffile.write(TERRAFORM_TPL.format(f"{backend.hcl(self.tag)}"))
             tffile.write(backend.data_hcl(remotes))
 
         # Create the variable definitions
-        with open(f"{target}/worker.auto.tfvars", "w+") as varfile:
+        with open(f"{self._target}/worker.auto.tfvars", "w+") as varfile:
             for k, v in self._terraform_vars.items():
                 varfile.write(f"{k} = {self.vars_typer(v)}\n")
 
