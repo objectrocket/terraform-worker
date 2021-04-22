@@ -41,6 +41,39 @@ providers:
     source: "gavinbunney/kubectl"
 ```
 
+**NOTE:** By default, terraform-worker emits all of the providers from the configuration in each
+definition's terraform.tf file.  If all of the providers are available from the default hashicorp
+namespaced, this behavior is fine.  However, when using a provider from a non-hashicorp namespace
+AND terraform 0.13+, definitions which do not explicitly define the `source` for the non-hashicorp
+provider will not be able to resolve the provider. As a stop-gap fix, support for a `provider_excludes`
+field has been added.  In the future, the terraform-worker will support auto-discovering each
+definitions `required_providers`.
+
+
+**provider_excludes** example:
+```yaml
+  providers:
+    'null':
+      vars:
+        version: "~> 2.1"
+    kubectl:
+      vars:
+        version: "~> 1.9"
+        source: "gavinbunney/kubectl"
+
+  definitions:
+    # Either setup a VPC and resources, or deploy into an existing one
+    network:
+      path: /definitions/aws/network-existing
+
+    database:
+      path: /definitions/aws/rds
+
+      provider_excludes:
+        - kubectl
+```
+
+
 ## Development
 
 ```sh
