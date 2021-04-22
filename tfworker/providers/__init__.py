@@ -49,7 +49,7 @@ class ProvidersCollection(collections.abc.Mapping):
     def __iter__(self):
         return iter(self._providers.values())
 
-    def hcl(self, excludes):
+    def hcl(self, includes):
         return "\n".join(
-            [prov.hcl() for k, prov in self._providers.items() if k not in excludes]
+            [prov.hcl() for k, prov in self._providers.items() if k in includes]
         )

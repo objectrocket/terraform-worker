@@ -15,9 +15,11 @@
 import collections
 import copy
 import json
+import os
 from typing import OrderedDict
 
 import click
+import hcl2
 from tfworker import constants as const
 from tfworker.util.copier import CopyFactory
 
@@ -105,6 +107,20 @@ class Definition:
         except FileExistsError as e:
             raise ReservedFileError(e)
 
+        # TODO how to make a set of includes
+        providers_to_include = set(self._providers.keys())
+        if self._tf_version_major >= 13:
+            version_path = os.path.join(target, "versions.tf")
+            if os.path.exists(version_path) and os.path.isfile(version_path):
+                with open(version_path, "rb") as reader:
+                    vinfo = hcl2.load(reader)
+                    required_providers = set(
+                        vinfo.get("terraform", {}).get("required_providers", {}).keys()
+                    )
+                    providers_to_include = providers_to_include.intersection(
+                        required_providers
+                    )
+
         # Prepare variables
         self._template_vars["deployment"] = self._deployment
         self._terraform_vars["deployment"] = self._deployment
@@ -120,7 +136,7 @@ class Definition:
         # create remote data sources, and required providers
         remotes = list(map(lambda x: x.split(".")[0], self._remote_vars.values()))
         with open(f"{target}/terraform.tf", "w+") as tffile:
-            tffile.write(f"{self._providers.hcl(self._provider_excludes)}\n\n")
+            tffile.write(f"{self._providers.hcl(providers_to_include)}\n\n")
             tffile.write(TERRAFORM_TPL.format(f"{backend.hcl(self.tag)}"))
             tffile.write(backend.data_hcl(remotes))
 
