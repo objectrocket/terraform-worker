@@ -23,7 +23,7 @@ from tfworker.util.copier import CopyFactory
 
 TERRAFORM_TPL = """\
 terraform {{
-{0}{1}
+{0}
 }}
 """
 
@@ -121,16 +121,7 @@ class Definition:
         remotes = list(map(lambda x: x.split(".")[0], self._remote_vars.values()))
         with open(f"{target}/terraform.tf", "w+") as tffile:
             tffile.write(f"{self._providers.hcl(self._provider_excludes)}\n\n")
-            required_providers = ""
-            if self._tf_version_major <= 12:
-                if False:  # self._providers.has_required_providers:
-                    required_providers = f"\n\n{self._providers.required_providers()}"
-            tffile.write(
-                TERRAFORM_TPL.format(
-                    f"{backend.hcl(self.tag)}",
-                    required_providers,
-                )
-            )
+            tffile.write(TERRAFORM_TPL.format(f"{backend.hcl(self.tag)}"))
             tffile.write(backend.data_hcl(remotes))
 
         # Create the variable definitions
