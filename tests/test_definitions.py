@@ -49,6 +49,7 @@ class TestDefinitions:
     @pytest.mark.parametrize(
         "tf_version, expected_tf_block, expected_providers",
         [
+            (15, EXPECTED_TF_BLOCK, ["google", "null"]),
             (14, EXPECTED_TF_BLOCK, ["google", "null"]),
             (13, EXPECTED_TF_BLOCK, ["google", "null"]),
             (12, EXPECTED_TF_BLOCK, ["aws", "google", "google_beta", "null", "vault"]),
