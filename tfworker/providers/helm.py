@@ -31,7 +31,7 @@ class HelmProvider(BaseProvider):
         provider_vars = {}
         try:
             for k, v in self.vars.items():
-                if k not in self._provider_exclusions:
+                if k not in self._field_filter:
                     provider_vars[k] = v
         except (KeyError, TypeError):
             """No provider vars were set."""

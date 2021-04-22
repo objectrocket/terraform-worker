@@ -23,7 +23,7 @@ class BaseProvider:
         self.version = self.vars.get("version")
         self.source = body.get("source")
 
-        self._provider_exclusions = ["version"]
+        self._field_filter = ["version"]
 
     def hcl(self):
         result = []
@@ -31,7 +31,7 @@ class BaseProvider:
         try:
             for k, v in self.vars.items():
                 if self._tf_version_major >= 13:
-                    if k not in self._provider_exclusions:
+                    if k not in self._field_filter:
                         provider_vars[k] = v
                 else:
                     provider_vars[k] = v
