@@ -58,8 +58,10 @@ class ProvidersCollection(collections.abc.Mapping):
     def has_required_providers(self):
         return len([True for _, prov in self._providers.items() if prov.source]) > 0
 
-    def hcl(self):
-        return "\n".join([prov.hcl() for _, prov in self._providers.items()])
+    def hcl(self, includes):
+        return "\n".join(
+            [prov.hcl() for k, prov in self._providers.items() if k in includes]
+        )
 
     def required_providers(self):
         content = "\n".join(

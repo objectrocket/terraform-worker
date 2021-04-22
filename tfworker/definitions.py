@@ -60,6 +60,8 @@ class Definition:
             body.get("terraform_vars", collections.OrderedDict()), global_terraform_vars
         )
 
+        self._provider_includes = body.get("provider_includes", [])
+
         self._deployment = deployment
         self._repository_path = repository_path
         self._providers = providers
@@ -118,7 +120,7 @@ class Definition:
         # create remote data sources, and required providers
         remotes = list(map(lambda x: x.split(".")[0], self._remote_vars.values()))
         with open(f"{target}/terraform.tf", "w+") as tffile:
-            tffile.write(f"{self._providers.hcl()}\n\n")
+            tffile.write(f"{self._providers.hcl(self._provider_includes)}\n\n")
             required_providers = ""
             if self._tf_version_major <= 12:
                 if False:  # self._providers.has_required_providers:
