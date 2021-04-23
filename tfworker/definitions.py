@@ -89,7 +89,7 @@ class Definition:
         result = set(self._providers.keys())
         if self._tf_version_major >= 13:
             version_path = os.path.join(self._target, "versions.tf")
-            if os.path.exists(version_path) and os.path.isfile(version_path):
+            if os.path.exists(version_path):
                 with open(version_path, "r") as reader:
                     vinfo = hcl2.load(reader)
                     tf_element = vinfo.get("terraform", [None]).pop()
