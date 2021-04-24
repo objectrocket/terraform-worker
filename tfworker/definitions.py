@@ -15,7 +15,7 @@
 import collections
 import copy
 import json
-import os
+from pathlib import Path, PurePath
 from typing import OrderedDict
 
 import click
@@ -88,8 +88,8 @@ class Definition:
         """ Extract only the providers used by a definition """
         result = set(self._providers.keys())
         if self._tf_version_major >= 13:
-            version_path = os.path.join(self._target, "versions.tf")
-            if os.path.exists(version_path):
+            version_path = PurePath(self._target) / "versions.tf"
+            if Path(version_path).exists():
                 with open(version_path, "r") as reader:
                     vinfo = hcl2.load(reader)
                     tf_element = vinfo.get("terraform", [None]).pop()
