@@ -184,7 +184,7 @@ def replace_hcl_vars(hcl, args):
 
 def ordered_config_load_hcl(stream, args):
     """
-    Load a yaml config, and replace templated items.
+    Load a hcl config, and replace templated items.
 
     Derived from:
     https://stackoverflow.com/questions/5121931/in-python-how-can-you-load-yaml-mappings-as-ordereddicts
@@ -198,7 +198,7 @@ def ordered_config_load(
     stream, args, Loader=yaml.SafeLoader, object_pairs_hook=OrderedDict
 ):
     """
-    Load an hcl config, and replace templated items.
+    Load a yaml config, and replace templated items.
 
     Derived from:
     https://stackoverflow.com/questions/5121931/in-python-how-can-you-load-yaml-mappings-as-ordereddicts
