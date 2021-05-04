@@ -10,7 +10,7 @@ This is the documentation for the terraform-worker command line tool.
 
 .. toctree::
    :maxdepth: 1
-   :caption: Contents:
+   :caption: Getting Started:
 
    install
    quick-start

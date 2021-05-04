@@ -1,10 +1,10 @@
-.. index::
-   single: hooks
-
 .. _hooks:
 
 Hooks
 =====
+
+.. index::
+   single: hooks
 
 Hooks are executable "cut-in" points that are available to a user during the course of executing a **terraform-worker**
 configuration.  The hooks mechanism allows a user to insert an execuatable script in a ``hooks`` directory in a
@@ -44,6 +44,9 @@ list shows each of the hook events that the **terraform-worker** supports.
 
 Environment Variables
 ---------------------
+
+.. index::
+   pair: hooks; environment variables
 
 The execution environment of a hook script is populated with the :ref:`terraform_vars <terraform-vars>` and :ref:`remote_vars <remote-vars>` values from the definition.
 The naming convention for terraform_vars environment variables is ``TF_VAR_variable_name``.  The naming convention for 
