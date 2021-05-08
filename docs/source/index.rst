@@ -6,12 +6,19 @@
 Welcome to terraform-worker's documentation!
 ============================================
 
-This is the documentation for the terraform-worker command line tool.
+The **terraform-worker** is a terraform wrapper which emphasizes configuration simplicity for 
+complex orchestrations.  The **terraform-worker** works by reading a configuration of terraform
+provider, variable and module :ref:`definitions`, gathering provider plugins and remote terraform
+sources, and then serially executing the terraform operations in a local temporary directory. The
+**terraform-worker** supports passing orchestration values through a pipeline of terraform operations
+via the `data\.terraform_remote_state <https://www.terraform.io/docs/language/state/remote-state-data.html>`_
+data source.
 
 .. toctree::
    :maxdepth: 1
    :caption: Getting Started:
 
+   features
    install
    quick-start
    commands

@@ -1,14 +1,69 @@
-Concepts
-========
+Configuration Concepts
+======================
 
 The **terraform-worker** is a terraform wrapper which emphasizes configuration simplicity for 
 complex orchestrations.  The **terraform-worker** works by reading a configuration of terraform
 provider, variable and module :ref:`definitions`, gathering provider plugins and remote terraform
-sources, and then serially executing the terraform operations in a local temporary directory. The 
+sources, and then serially executing the terraform operations in a local temporary directory. The
 **terraform-worker** supports passing orchestration values through a pipeline of terraform operations
 via the `data\.terraform_remote_state <https://www.terraform.io/docs/language/state/remote-state-data.html>`_
-data source. This section examines the **terraform-worker** concepts of :ref:`definitions`,
+data source. This section examines the **terraform-worker** concepts of :ref:`rendering`, :ref:`definitions`,
 :ref:`terraform-vars`, :ref:`remote-vars`, and :ref:`provider-configurations`.
+
+.. index::
+   single: jinja templates
+
+.. _rendering:
+
+Rendering with Jinja templates
+-------------------------------
+
+**terraform-worker** configurations are pre-processed using the `Jinja <https://jinja.palletsprojects.com/en/2.11.x/>`_
+templating language. This allows interpolation of values passed in from the command line.
+
+.. note:: 
+
+   Expansion of a variable passed in from the CLI:
+
+   .. code-block:: yaml
+      :emphasize-lines: 5
+
+      providers:
+        aws:
+          vars:
+            version: ">= 3.16.0"
+            region: {{ aws_region }}
+
+**terraform-worker** supports a special ``env`` object for interpolating values passed in the environment.
+
+.. note::
+
+   Expansion of a variable passed in from the environment:
+
+   .. code-block:: yaml
+      :emphasize-lines: 4-5
+
+      definitions:
+        blue:
+          terraform_vars:
+            name: {{ env.NAME_VAR|default("alpha") }}
+            tag: {{ env.TAG_VAR|default("beta") }}
+
+Pre-processing with Jinja allows for the use of conditional blocks. Conditional blocks might be keyed on a
+`config-var` passed via the CLI.
+
+.. note::
+
+   TODO!!
+
+   .. code-block:: yaml
+      :emphasize-lines: 4-5
+
+      definitions:
+        blue:
+          terraform_vars:
+            name: {{ env.NAME_VAR|default("alpha") }}
+            tag: {{ env.TAG_VAR|default("beta") }}
 
 .. index::
    single: provider configurations
@@ -18,7 +73,44 @@ data source. This section examines the **terraform-worker** concepts of :ref:`de
 Provider Configurations
 -----------------------
 
-TBD
+A **terraform-worker** configuration must include information about the providers that are used by the
+definitions. The **terraform-worker** uses this information to download all plugins locally and then
+passes the local path to each terraform operation.
+
+.. note::
+
+   Following is a ``providers`` snippet from a configuration.
+
+   .. code-block:: yaml
+      :emphasize-lines: 2-9
+
+      terraform:
+        providers:
+          aws:
+            vars:
+              version: ">= 3.16.0"
+              region: {{ aws_region }}
+          'null':
+            vars:
+              version: ">= 3.0.0"
+
+Provider configurations typicallly include the version and any other variables that are required in a
+``vars`` dictionary.  If the provider is supported from hashicorp registry, it is also possible to
+explicitly stipulate the provider download location using a `baseURL` field in the provider dictionary.
+
+.. note::
+
+   Following is an example of a ``baseURL`` configuration.
+
+   .. code-block:: yaml
+      :emphasize-lines: 4
+
+      terraform:
+        providers:
+          kubectl:
+            baseURL: https://github.com/gavinbunney/terraform-provider-kubectl/releases/download/v1.9.4
+            vars:
+              version: "1.9.4"
 
 .. index::
    single: definition
@@ -49,13 +141,27 @@ or a path to a git repository.
 
 .. _filesystem-definition:
 
-Filesystem Definition
-+++++++++++++++++++++
+Filesystem Definition - Root Terraform Module with benefits
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 A **filesystem definition** refers to a directory which includes a terraform root module.  It may also include a 
 :ref:`hooks` directory and a :ref:`terraform-modules` directory.
 
-.. note:: TBD illustrative example??
+.. note::
+
+   Following is the directory tree of a sample definition.
+
+   .. code-block:: bash
+
+      definitions/new-ami
+      ├── README.md
+      ├── hooks
+      │   ├── images
+      │   │   └── image.pkr.hcl
+      │   └── scripts
+      │       └── setup.sh
+      ├── main.tf
+      └── outputs.tf
 
 .. index::
    single: terraform-modules
@@ -87,8 +193,8 @@ the underlying terraform operation in a ``worker.auto.tfvars`` file.
    Following is a ``terraform_vars`` snippet from a configuration.
 
    .. code-block:: yaml
+      :emphasize-lines: 5-7
 
-      ...
       terraform:
         ...
         definitions:
@@ -124,6 +230,7 @@ variables that will be supplied from terraform's backend state store.
    Following is a ``remote_vars`` snippet from a configuration.
 
    .. code-block:: yaml
+      :emphasize-lines: 10,11
 
       ...
       terraform:

@@ -2,7 +2,7 @@ Commands
 ========
 
 This section provides an explanation of the **version**, **terraform**, and **clean** commands
-to the ``terraform-worker``.
+to the **terraform-worker**.
 
 .. contents:: On this page
    :depth: 3
@@ -13,7 +13,7 @@ version
 .. index::
    pair: commands; version
 
-The **version** command provides the semantic version information for the ``terraform-worker``.
+The **version** command provides the semantic version information for the **terraform-worker**.
 
 .. code-block:: bash
 
@@ -38,7 +38,7 @@ configuration.  The **terraform** command supports the following arguments.
    triple: terraform; options; --clean
 
 The **--no-clean** flag will prevent the temporary directory where terraform operations are executed
-from being deleted when the ``terraform-worker`` command completes.  The **--clean** option will cause
+from being deleted when the **terraform-worker** command completes.  The **--clean** option will cause
 the temporary directory to be deleted.  By default, the **--clean** option is active.
 
 \-\-apply / \-\-no-apply
@@ -86,7 +86,7 @@ flag will cause ``terraform destroy`` to be executed. ``destroy`` will only be c
    triple: terraform command; options; --show-output
 
 The **--show-output** flag will cause verbose output from the underlying terraform operations to be written to standard out
-of the ``terraform-worker`` process.
+of the **terraform-worker** process.
 
 \-\-terraform-bin
 +++++++++++++++++
@@ -110,7 +110,7 @@ The **--terraform-bin** option allows a user to specify a specific terraform bin
 .. index::
    triple: terraform command; options; --b64-encode-hook-values
 
-The **--b64-encode-hook-values** flag will cause variable and output values that are made available to ``terraform-worker``
+The **--b64-encode-hook-values** flag will cause variable and output values that are made available to **terraform-worker**
 hooks to be base64 encoded.  This is useful since these values can be complex data structures that are not easily escaped
 in an environment variable.
 
@@ -149,7 +149,7 @@ clean
    pair: commands; clean
 
 The **clean** command is used to initiate operations related to removing artifacts left over
-from previous runs of the ``terraform-worker``.  For example, for a ``terraform-worker`` configuration
+from previous runs of the **terraform-worker**.  For example, for a **terraform-worker** configuration
 that uses an AWS/S3 backend store, the **clean** command will remove the DynamoDB tables associated
 with the backend's locking mechanism.
 
