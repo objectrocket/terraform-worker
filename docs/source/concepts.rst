@@ -53,7 +53,7 @@ templating language. This allows interpolation of values passed in from the comm
             tag: {{ env.TAG_VAR|default("beta") }}
 
 Pre-processing with Jinja allows for the use of conditional blocks. Conditional blocks might be keyed on a
-`config-var` passed via the CLI.
+:ref:`config-var` passed via the CLI.
 
 .. note::
 

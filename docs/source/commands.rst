@@ -160,6 +160,8 @@ exists.
 .. index::
    triple: worker; options; --backend-region
 
+.. _config-var:
+
 \-\-config-var
 ++++++++++++++
 
