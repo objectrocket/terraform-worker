@@ -26,13 +26,13 @@ save it to a local file named ``tfw.yaml``.
         tags:
           path: git@github.com:ephur/terraform-worker-examples.git
           remote_path_options:
-            sub_path: definitions/tf15/misc-tags
+            sub_path: definitions/quickstart/misc-tags
 
         # network creates a VPC and required resources to launch instances
         network:
           path: git@github.com:ephur/terraform-worker-examples.git
           remote_path_options:
-            sub_path: definitions/tf15/vpc-new
+            sub_path: definitions/quickstart/vpc-new
           remote_vars:
             tags: tags.outputs.tag_map
 
@@ -40,7 +40,7 @@ save it to a local file named ``tfw.yaml``.
         gateway:
           path: git@github.com:ephur/terraform-worker-examples.git
           remote_path_options:
-            sub_path: definitions/tf15/service
+            sub_path: definitions/quickstart/service
           terraform_vars:
             name: new-app-gateway
             public_ip: true
@@ -52,7 +52,7 @@ save it to a local file named ``tfw.yaml``.
         backend:
           path: git@github.com:ephur/terraform-worker-examples.git
           remote_path_options:
-            sub_path: definitions/tf15/service
+            sub_path: definitions/quickstart/service
           terraform_vars:
             name: new-app-backend
           remote_vars:
