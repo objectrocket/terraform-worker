@@ -7,6 +7,168 @@ to the **terraform-worker**.
 .. contents:: On this page
    :depth: 3
 
+Root command options
+--------------------
+
+The following commands are all available on the root **terraform-worker** command.
+
+\-\-aws-access-key-id
++++++++++++++++++++++
+
+The **\-\-aws-access-key-id** option specifies the **AWS_ACCESS_KEY_ID** configuration value
+that is to be used for the underlying terraform operations.
+
+.. index::
+   triple: worker; options; --aws-access-key-id
+
+\-\-aws-secret-access-key
++++++++++++++++++++++++++
+
+The **\-\-aws-secret-access-key** option specifies the **AWS_SECRET_ACCESS_KEY** configuration
+value that is to be used for the underlying terraform operations.
+
+.. index::
+   triple: worker; options; --aws-secret-access-key
+
+\-\-aws-session-token
++++++++++++++++++++++
+
+The **\-\-aws-session-token** option specifies the **AWS_SESSION_TOKEN** configuration value
+that is to be used for the underlying terraform operations.
+
+.. index::
+   triple: worker; options; --aws-session-token
+
+\-\-aws-role-arn
+++++++++++++++++
+
+The **\-\-aws-role-arn** option specifies the **AWS_ROLE_ARN** configuration value that is
+to be used for the underlying terraform operations.
+
+.. index::
+   triple: worker; options; --aws-role-arn
+
+\-\-aws-region
+++++++++++++++
+
+The **\-\-aws-region** option specifies the **AWS_DEFAULT_REGION** configuration value that
+is to be used for the underlying terraform operations.
+
+.. index::
+   triple: worker; options; --aws-region
+
+\-\-aws-profile
++++++++++++++++
+
+The **\-\-aws-profile** option specifies the **AWS_PROFILE** configuration value that is to
+be used for the underlying terraform operations.
+
+.. index::
+   triple: worker; options; --aws-profile
+
+\-\-gcp-region
+++++++++++++++
+
+The **\-\-gcp-region** option specifies the **REGION** configuration value for the GCP
+region that is to be used for the underlying terraform operations.
+
+.. index::
+   triple: worker; options; --gcp-region
+
+\-\-gcp-creds-path
+++++++++++++++++++
+
+The **\-\-gcp-creds-path** option specifies the local filesystem path for the credentials
+that are to be used for the underlying terraform operations.
+
+.. index::
+   triple: worker; options; --gcp-creds-path
+
+\-\-gcp-poject
+++++++++++++++
+
+The **\-\-gcp-project** option sepcifies the google project id that is to be used for the
+underlying terraform operations.
+
+.. index::
+   triple: worker; options; --gcp-project
+
+\-\-config-file
++++++++++++++++
+
+The **\-\-config-file** option specifies the local filesystem path of the configuration
+file for the current operation.
+
+.. index::
+   triple: worker; options; --config-file
+
+\-\-repository-path
++++++++++++++++++++
+
+The **\-\-repository-path** option specifies the local filesystem path of the repository
+containing terraform modules.  By default this value is the current working directory.
+
+.. index::
+   triple: worker; options; --repository-path
+
+\-\-backend
++++++++++++
+
+The **\-\-backend** option specifies which type of terraform backend should be used in
+the current operation.  Acceptable values are: ``gcs`` or ``s3``.
+
+.. index::
+   triple: worker; options; --backend
+
+\-\-backend-bucket
+++++++++++++++++++
+
+The **\-\-backend-bucket** option specifies the name of the backend bucket that should
+be used to house the terraform state files.  
+
+.. warning::
+
+   **terraform-=worker** does not create the backend bucket. Creation of this file is
+   a prerequistie for running the **terraform-worker** with with either a ``gcs`` or
+   ``s3`` backend.
+
+.. index::
+   triple: worker; options; --backend-bucket
+
+.. _backend-prefix:
+
+\-\-backend-prefix
+++++++++++++++++++
+
+The **\-\-backend-prefix** option specifies the prefix under which terraform state values
+will be stored for the current operation.  By default this value is
+``terraform/state/<deployment>``.
+
+.. seealso::
+   :ref:`terraform_deployment`
+   :ref:`clean_deployment`
+
+.. index::
+   triple: worker; options; --backend-prefix
+
+\-\-backend-region
+++++++++++++++++++
+
+The **\-\-backend-region** option specifies the region where the backend lock file
+exists.
+
+.. index::
+   triple: worker; options; --backend-region
+
+\-\-config-var
+++++++++++++++
+
+The **\-\-config-var** option specifies the key=value to be supplied as jinja variables in
+config_file under "var" dictionary. This option can be specified multiple times.
+
+.. index::
+   triple: worker; options; --config-var
+
 version
 -------
 
@@ -41,6 +203,8 @@ The **--no-clean** flag will prevent the temporary directory where terraform ope
 from being deleted when the **terraform-worker** command completes.  The **--clean** option will cause
 the temporary directory to be deleted.  By default, the **--clean** option is active.
 
+.. _terraform-apply-no-apply:
+
 \-\-apply / \-\-no-apply
 ++++++++++++++++++++++++
 
@@ -69,9 +233,9 @@ The **--no-force** flag will omit the ``-force`` option from a ``terraform apply
 ++++++++++++++++++++++++++++
 
 .. index::
-   triple: terraform command; options; --no-destroy
+   triple: terraform commands; options; --no-destroy
 .. index::
-   triple: terraform command; options; --destroy
+   triple: terraform commands; options; --destroy
 
 The **--no-destroy** flag will prevent each terraform definition from executing ``terraform destroy``.  The **--destroy**
 flag will cause ``terraform destroy`` to be executed. ``destroy`` will only be called when ``--destroy`` is passed, so
@@ -81,9 +245,9 @@ flag will cause ``terraform destroy`` to be executed. ``destroy`` will only be c
 ++++++++++++++++++++++++++++++++++++
 
 .. index::
-   triple: terraform command; options; --no-show-output
+   triple: terraform commands; options; --no-show-output
 .. index::
-   triple: terraform command; options; --show-output
+   triple: terraform commands; options; --show-output
 
 The **--show-output** flag will cause verbose output from the underlying terraform operations to be written to standard out
 of the **terraform-worker** process.
@@ -92,7 +256,7 @@ of the **terraform-worker** process.
 +++++++++++++++++
 
 .. index::
-   triple: terraform command; options; --terraform-bin
+   triple: terraform commands; options; --terraform-bin
 
 The **--terraform-bin** option allows a user to specify a specific terraform binary.
 
@@ -106,9 +270,9 @@ The **--terraform-bin** option allows a user to specify a specific terraform bin
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 .. index::
-   triple: terraform command; options; --no-b64-encode-hook-values
+   triple: terraform commands; options; --no-b64-encode-hook-values
 .. index::
-   triple: terraform command; options; --b64-encode-hook-values
+   triple: terraform commands; options; --b64-encode-hook-values
 
 The **--b64-encode-hook-values** flag will cause variable and output values that are made available to **terraform-worker**
 hooks to be base64 encoded.  This is useful since these values can be complex data structures that are not easily escaped
@@ -117,11 +281,13 @@ in an environment variable.
 .. seealso::
    :doc:`./hooks`
 
+.. _terraform-modules-dir:
+
 \-\-terraform-modules-dir
 +++++++++++++++++++++++++
 
 .. index::
-   triple: terraform command; options; --terraform-modules-dir
+   triple: terraform commands; options; --terraform-modules-dir
 
 The **--terraform-modules--dir** option allows a user to specify a local directory where terraform-modules can be found.
 If this value is not set, the location is assumed to be ``./terraform-modules``.
@@ -129,18 +295,28 @@ If this value is not set, the location is assumed to be ``./terraform-modules``.
 .. seealso::
    :ref:`terraform-modules`
 
+.. _terraform-limit:
+
 \-\-limit
 +++++++++
 
 .. index::
-   triple: terraform command; options; --limit
+   triple: terraform commands; options; --limit
 
 The **--limit** option is a repeatable option which allows a user to limit terraform operations to only specific
-configuration definitions.
+configuration definitions. This option can be specified multiple times.
 
 .. code-block:: bash
 
    % worker terraform --apply --limit alpha --limit omega
+
+.. _terraform_deployment:
+
+deployment
+++++++++++
+
+The **deployment** argument specifies the name of the deployment to be used for the current operation. This value is used
+in as a part of the :ref:`backend-prefix` bucket key. A valid deployment value is no more than 16 characters.
 
 clean
 -----
@@ -157,11 +333,19 @@ with the backend's locking mechanism.
 +++++++++
 
 .. index::
-   triple: --config-file ./worker.yaml clean command; options; --limit
+   triple: clean commands; options; --limit
 
 The **--limit** option is a repeatable option which allows a user to limit clean operations to only specific
-configuration definitions.
+configuration definitions. This option can be specified multiple times.
 
 .. code-block:: bash
 
    % worker --config-file ./worker.yaml clean --apply --limit alpha --limit omega
+
+.. _clean_deployment:
+
+deployment
+++++++++++
+
+The **deployment** argument specifies the name of the deployment to be used for the current operation. This value is used
+in as a part of the :ref:`backend-prefix` bucket key. A valid deployment value is no more than 16 characters.

@@ -10,6 +10,9 @@ via the `data\.terraform_remote_state <https://www.terraform.io/docs/language/st
 data source. This section examines the **terraform-worker** concepts of :ref:`rendering`, :ref:`definitions`,
 :ref:`terraform-vars`, :ref:`remote-vars`, and :ref:`provider-configurations`.
 
+.. contents:: On this page
+   :depth: 3
+
 .. index::
    single: jinja templates
 
@@ -54,16 +57,21 @@ Pre-processing with Jinja allows for the use of conditional blocks. Conditional 
 
 .. note::
 
-   TODO!!
+   Following is an example of Jinaja conditional blocks applied to terraform variable configuration.
 
-   .. code-block:: yaml
-      :emphasize-lines: 4-5
+   .. code-block:: jinja
+      :emphasize-lines: 4-8
 
       definitions:
         blue:
+          path: /definitions/charts
           terraform_vars:
-            name: {{ env.NAME_VAR|default("alpha") }}
-            tag: {{ env.TAG_VAR|default("beta") }}
+            {% if env.CHART_HOME is defined and env.CHART_HOME %}
+            chart_base_path: "{{ env.CHART_HOME }}/helm-charts"
+            {% else %}
+            chart_base_path: "{{ env.HOME }}/helm-charts"
+            {% endif %}
+            homedir: {{ env.HOME }}
 
 .. index::
    single: provider configurations
@@ -126,8 +134,6 @@ supporting files on a file system, or in a git repository. In general, these lat
 lightweight.  They are mainly involved aggregating the parameters that will be supplied to an underlying
 terraform module as inputs.
 
-.. note:: TBD illustrative example??
-
 .. _definition-statements:
 
 Definition Statements
@@ -137,15 +143,24 @@ A **definition statement** is `key` in a :ref:`definitions` object in a **terraf
 A **definition statement** must include a `key` which defines either a locally relative :ref:`filesystem-definition`
 or a path to a git repository.
 
-.. note:: TBD illustrative example??
+.. note:: Following is an example of a definitions statement, "ami". 
+
+   .. code-block:: yaml
+
+      definitions:
+        ami:
+          path: /definitions/new-ami
+          terraform_vars:
+            name: {{ env.NAME_VAR|default("alpha") }}
+            tag: {{ env.TAG_VAR|default("beta") }}
 
 .. _filesystem-definition:
 
-Filesystem Definition - Root Terraform Module with benefits
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Filesystem Definition
++++++++++++++++++++++
 
-A **filesystem definition** refers to a directory which includes a terraform root module.  It may also include a 
-:ref:`hooks` directory and a :ref:`terraform-modules` directory.
+A **filesystem definition** refers to a directory which includes a terraform root module.  Optionally, it may also
+include a :ref:`hooks` directory.
 
 .. note::
 
@@ -162,19 +177,6 @@ A **filesystem definition** refers to a directory which includes a terraform roo
       │       └── setup.sh
       ├── main.tf
       └── outputs.tf
-
-.. index::
-   single: terraform-modules
-
-.. _terraform-modules:
-
-Terraform Modules
-+++++++++++++++++
-
-The **terraform-worker** can be made aware of terraform modules which may need to be copied into the
-temporary directory where terraform operations are being executed so that relative paths resolve properly.
-
-.. note:: TBD illustrative example??
 
 .. index::
    single: terraform_vars
@@ -255,3 +257,19 @@ variables that will be supplied from terraform's backend state store.
       locals {
         tags = data.terraform_remote_state.tagging.output.tagmap
       }
+
+.. index::
+   single: terraform modules
+
+.. _terraform-modules:
+
+Terraform Modules
+-----------------
+
+The **terraform-worker** can be made aware of a local repository of terraform-modules.  Locally defined
+terraform modules are copied into the same directory as a **terraform-worker** definition, so that they
+are available within a definition's terraform code at the path: ``./terraform-modules``.
+
+The location of a local repository of terraform-modules can be specified using the
+:ref:`terraform-modules-dir` command line option.
+
