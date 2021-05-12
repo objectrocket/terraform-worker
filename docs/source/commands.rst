@@ -106,7 +106,9 @@ file for the current operation.
 +++++++++++++++++++++
 
 The **\\-\\-repository-path** option specifies the local filesystem path of the repository
-containing terraform modules.  By default this value is the current working directory.
+containing terraform modules.
+
+By default, this value is the current working directory.
 
 .. index::
    triple: worker; options; --repository-path
@@ -141,8 +143,9 @@ be used to house the terraform state files.
 ++++++++++++++++++++
 
 The **\\-\\-backend-prefix** option specifies the prefix under which terraform state values
-will be stored for the current operation.  By default this value is
-``terraform/state/<deployment>``.
+will be stored for the current operation.
+
+By default, this value is ``terraform/state/<deployment>``.
 
 .. seealso::
    | The terraform command's :ref:`deployment <terraform_deployment>` option.
@@ -229,7 +232,9 @@ configuration.  The **terraform** command supports the following arguments.
 
 The **\\-\\-no-clean** flag will prevent the temporary directory where terraform operations are executed
 from being deleted when the **terraform-worker** command completes.  The **\\-\\-clean** option will cause
-the temporary directory to be deleted.  By default, the **\\-\\-clean** option is active.
+the temporary directory to be deleted.
+
+By default, the **\\-\\-clean** option is active.
 
 .. _terraform-apply-no-apply:
 
@@ -242,8 +247,9 @@ the temporary directory to be deleted.  By default, the **\\-\\-clean** option i
    triple: terraform; options; --apply
 
 The **\\-\\-no-apply** flag will cause the operations for each terraform definition to only execute
-``terraform plan``.  The **\\-\\-apply** flag will cause ``terraform apply`` to be executed.  By default,
-the **\\-\\-no-apply** option is active.
+``terraform plan``.  The **\\-\\-apply** flag will cause ``terraform apply`` to be executed.
+
+By default, the **\\-\\-no-apply** option is active.
 
 \\-\\-force / \\-\\-no-force
 ++++++++++++++++++++++++++++
@@ -332,7 +338,9 @@ If this value is not set, the location is assumed to be ``./terraform-modules``.
    triple: terraform commands; options; --limit
 
 The **\\-\\-limit** option is a repeatable option which allows a user to limit terraform operations to only specific
-configuration definitions. This option can be specified multiple times.
+configuration definitions.
+
+This option can be specified multiple times.
 
 .. code-block:: bash
 
@@ -364,7 +372,9 @@ with the backend's locking mechanism.
    triple: clean commands; options; --limit
 
 The **\\-\\-limit** option is a repeatable option which allows a user to limit clean operations to only specific
-configuration definitions. This option can be specified multiple times.
+configuration definitions.
+
+This option can be specified multiple times.
 
 .. code-block:: bash
 
