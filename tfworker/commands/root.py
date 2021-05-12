@@ -30,7 +30,7 @@ from jinja2.runtime import StrictUndefined
 
 
 class RootCommand:
-    def __init__(self, args=None, clean=True):
+    def __init__(self, args={}, clean=True):
         """Setup state with args that are passed."""
         self.clean = clean
         self.temp_dir = tempfile.mkdtemp()
@@ -40,9 +40,7 @@ class RootCommand:
         # Config accessors
         self.tf = None
         self._pullup_keys()
-
-        if args is not None:
-            self.add_args(args)
+        self.add_args(args)
 
         if args.get("config_file") and args.get("backend"):
             click.secho(f"loading config file {args.get('config_file')}", fg="green")
@@ -73,15 +71,21 @@ class RootCommand:
             template_reader = io.StringIO()
             jinja_env = jinja2.Environment(
                 undefined=StrictUndefined,
-                loader=jinja2.FileSystemLoader(pathlib.Path(self.config_file).parents[0]),
+                loader=jinja2.FileSystemLoader(
+                    pathlib.Path(self.config_file).parents[0]
+                ),
             )
-            template_config = jinja_env.get_template(pathlib.Path(self.config_file).name)
+            template_config = jinja_env.get_template(
+                pathlib.Path(self.config_file).name
+            )
             # maybe get_env should be optional?
             template_config.stream(
                 **self.args.template_items(return_as_dict=True, get_env=True)
             ).dump(template_reader)
             if self.config_file.endswith(".hcl"):
-                self.config = ordered_config_load_hcl(template_reader.getvalue(), self.args)
+                self.config = ordered_config_load_hcl(
+                    template_reader.getvalue(), self.args
+                )
             else:
                 self.config = ordered_config_load(template_reader.getvalue(), self.args)
 
@@ -109,6 +113,7 @@ class RootCommand:
             "remote_vars",
             "template_vars",
             "terraform_vars",
+            "worker_options",
         ]:
             if self.tf:
                 setattr(self, f"{k}_odict", self.tf.get(k, OrderedDict()))
@@ -190,7 +195,9 @@ def ordered_config_load_hcl(stream, args):
     Derived from:
     https://stackoverflow.com/questions/5121931/in-python-how-can-you-load-yaml-mappings-as-ordereddicts
     """
-    hcl2_ordered = Lark_StandAlone(transformer=hcl2_transformer.OrderedDictTransformer())
+    hcl2_ordered = Lark_StandAlone(
+        transformer=hcl2_transformer.OrderedDictTransformer()
+    )
     doc = hcl2_ordered.parse(stream + "\n")
     return replace_hcl_vars(doc, args)
 

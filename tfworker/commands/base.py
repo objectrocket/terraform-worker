@@ -17,6 +17,7 @@ from collections import OrderedDict
 from tfworker.authenticators import AuthenticatorsCollection
 from tfworker.backends import select_backend
 from tfworker.definitions import DefinitionsCollection
+from tfworker.options import OptionsCollection
 from tfworker.plugins import PluginsCollection
 from tfworker.providers import ProvidersCollection
 
@@ -39,7 +40,9 @@ class BaseCommand:
         self._terraform_vars = OrderedDict()
         self._remote_vars = OrderedDict()
 
+        self._options = OptionsCollection(rootc, **kwargs)
         self._temp_dir = rootc.temp_dir
+
         self._repository_path = rootc.args.repository_path
         rootc.add_arg("deployment", deployment)
         rootc.load_config()
@@ -48,7 +51,6 @@ class BaseCommand:
         )
 
         rootc.clean = kwargs.get("clean", True)
-
         self._providers = ProvidersCollection(
             rootc.providers_odict, self._authenticators, tf_version_major
         )
