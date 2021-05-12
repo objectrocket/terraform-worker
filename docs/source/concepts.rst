@@ -85,26 +85,38 @@ A **terraform-worker** configuration must include information about the provider
 definitions. The **terraform-worker** uses this information to download all plugins locally and then
 passes the local path to each terraform operation.
 
+Provider configurations typically include the version and any other configuration variables the provider
+may require. These values should be declared in a ``vars`` dictionary as an immediate child of provider-named
+dictionary.
+
 .. note::
 
-   Following is a ``providers`` snippet from a configuration.
+    Following is a ``providers`` snippet from a configuration.
 
-   .. code-block:: yaml
-      :emphasize-lines: 2-9
+    .. code-block:: yaml
+       :emphasize-lines: 2-9
 
-      terraform:
-        providers:
-          aws:
-            vars:
-              version: ">= 3.16.0"
-              region: {{ aws_region }}
-          'null':
-            vars:
-              version: ">= 3.0.0"
+       terraform:
+         providers:
+           aws:
+             vars:
+               version: ">= 3.16.0"
+               region: {{ aws_region }}
+           'null':
+             vars:
+               version: ">= 3.0.0"
 
-Provider configurations typicallly include the version and any other variables that are required in a
-``vars`` dictionary.  If the provider is supported from hashicorp registry, it is also possible to
-explicitly stipulate the provider download location using a `baseURL` field in the provider dictionary.
+    Following is how the ``region`` variable from the **aws** provider configuration listed above is rendered
+    in the terraform ``provider`` block.
+
+    .. code-block:: terraform
+
+        provider "aws" {
+          region = "us-west-2"
+        }
+
+If the provider is not available from the hashicorp registry, it is also possible to explicitly stipulate
+the provider download location using a ``baseURL`` field in the provider dictionary.
 
 .. note::
 
