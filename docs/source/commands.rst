@@ -220,7 +220,7 @@ The **terraform** command is used to initialize the terraform definition calls e
 configuration.  The **terraform** command supports the following arguments.
 
 \\-\\-clean / \\-\\-no-clean
-++++++++++++++++__++++++++++
+++++++++++++++++++++++++++++
 
 .. index::
    triple: terraform; options; --no-clean
