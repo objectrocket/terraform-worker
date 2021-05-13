@@ -2,7 +2,7 @@ Commands
 ========
 
 This section provides an explanation of the **version**, **terraform**, and **clean** commands
-to the **terraform-worker**.
+to **terraform-worker**.
 
 .. contents:: On this page
    :depth: 3
@@ -131,7 +131,7 @@ be used to house the terraform state files.
 .. warning::
 
    **terraform-worker** does not create the backend bucket. Creation of this file is
-   a prerequistie for running the **terraform-worker** with with either a ``gcs`` or
+   a prerequistie for running **terraform-worker** with with either a ``gcs`` or
    ``s3`` backend.
 
 .. index::
@@ -206,7 +206,7 @@ version
 .. index::
    pair: commands; version
 
-The **version** command provides the semantic version information for the **terraform-worker**.
+The **version** command provides the semantic version information for **terraform-worker**.
 
 .. code-block:: bash
 
@@ -231,7 +231,7 @@ configuration.  The **terraform** command supports the following arguments.
    triple: terraform; options; --clean
 
 The **\\-\\-no-clean** flag will prevent the temporary directory where terraform operations are executed
-from being deleted when the **terraform-worker** command completes.  The **\\-\\-clean** option will cause
+from being deleted when **terraform-worker** command completes.  The **\\-\\-clean** option will cause
 the temporary directory to be deleted.
 
 By default, the **\\-\\-clean** option is active.
@@ -361,7 +361,7 @@ clean
    pair: commands; clean
 
 The **clean** command is used to initiate operations related to removing artifacts left over
-from previous runs of the **terraform-worker**.  For example, for a **terraform-worker** configuration
+from previous runs of **terraform-worker**.  For example, for a **terraform-worker** configuration
 that uses an AWS/S3 backend store, the **clean** command will remove the DynamoDB tables associated
 with the backend's locking mechanism.
 

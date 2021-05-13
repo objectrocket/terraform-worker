@@ -2,15 +2,16 @@ Quick Start
 ===========
 
 This section provides a quick sample of getting **terraform-worker** up and running.
-The configuration from this section references remote definitions hosted on github.
+The configuration from this section references remote :ref:`definitions <definitions>`
+hosted on github.
 
 .. warning::
 
    As with any code pulled from the public internet it is probably a good idea to 
    review the terraform that will be executed ahead of time.
 
-Following is a sample configuration file.  Copy the contents of the snippet below and
-save it to a local file named ``tfw.yaml``.
+Following is a sample configuration file.  Copy the contents of the code block below and
+save to a local file named ``tfw.yaml``.
 
 .. code-block:: yaml
    :linenos:
@@ -70,16 +71,16 @@ save it to a local file named ``tfw.yaml``.
 
 Next, run the following from a \*nix shell session.
 
-.. note::
-   Be sure to replace ``<YOUR_AWS_PROFILE>``, ``<YOUR_BACKEND_BUCKET>``, and ``<YOUR_AWS_REGION>`` with the
-   the appropriate values. Currently **terraform-worker** does not create the bucket.  It will need to be
-   created separately.
-
 .. code-block:: sh
 
     % worker --config-file ./tfw.yaml --aws-profile <YOUR_AWS_PROFILE> --backend s3 \
              --backend-region <YOUR_AWS_REGION> --backend-bucket <YOUR_BACKEND_BUCKET> \
              --aws-region <YOUR_AWS_REGION> terraform tfw-qs --show-output --limit tags
+
+.. note::
+   Be sure to replace ``<YOUR_AWS_PROFILE>``, ``<YOUR_BACKEND_BUCKET>``, and ``<YOUR_AWS_REGION>`` with the
+   the appropriate values. Currently **terraform-worker** does not create the bucket.  It will need to be
+   created separately.
 
 Once the operation is complete, the console should contain text similar to the following:
 
@@ -131,13 +132,13 @@ Once the operation is complete, the console should contain text similar to the f
 
 .. note::
 
-    Because the :ref:`\-\-limit <terraform-limit>` option was passed and the :ref:`\-\-apply <terraform-apply-no-apply>`
-    option was NOT passed, the previous operation only executed a terraform plan on the first
-    :ref:`definition <definitions>`.
+    Because the :ref:`terraform-limit` option was passed and the
+    :ref:`\\\\-\\\\-apply <terraform-apply-no-apply>` option was NOT passed, the previous operation only
+    executed a terraform plan on the first :ref:`definition <definitions>`.
 
 Next, remove the ``--limit`` option and add the ``--apply`` option execute apply on all of the
 terraform operations. Also add the ``--no-clean`` option to prevent the terraform operations files
-from being cleaned up when the **terraform-worker** completes.
+from being cleaned up when **terraform-worker** completes.
 
 .. code-block:: sh
 
@@ -172,7 +173,7 @@ Next, in the output from the preceding command, note the lines which similar to 
 In AWS, navigate to the EC2 service and search for each of the instance ids to verify they were created
 successfully.
 
-Finally, to clean up the resources provisioned by the **terraform-worker**, run the following:
+Finally, to clean up the resources provisioned by **terraform-worker**, run the following:
 
 .. code-block:: sh
 

@@ -1,7 +1,9 @@
 Installation
 ============
 
-To install the **terraform-worker** using `pip <https://pypi.org/project/pip/>`_, do the following:
+**terraform-worker** is `published on pypi <https://pypi.org/project/terraform-worker/>`_.
+To install **terraform-worker** using `pip <https://pypi.org/project/pip/>`_, run the
+following:
 
 .. code-block:: bash
 
@@ -16,4 +18,4 @@ If using `poetry <https://python-poetry.org/>`_:
 Dependencies
 ------------
 
-Since the **terraform-worker** is a wrapper, it depends on terraform version 0.12+.
+Since **terraform-worker** is a wrapper, it depends on terraform version 0.12+.

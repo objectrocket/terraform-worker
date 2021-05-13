@@ -1,7 +1,7 @@
 JSON Schema
 ===========
 
-The configuration is the crux of the **terraform-worker**.  Similar to a ``docker-compose`` file, the
+The configuration is the crux of **terraform-worker**.  Similar to a ``docker-compose`` file, the
 configuration provides the details on how an orchestration will unfold.
 
 A **terraform-worker** configuration can be written in YAML, JSON or HCL.

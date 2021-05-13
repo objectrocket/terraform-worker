@@ -7,7 +7,7 @@ provider, variable and module :ref:`definitions`, gathering provider plugins and
 sources, and then serially executing the terraform operations in a local temporary directory. The
 **terraform-worker** supports passing orchestration values through a pipeline of terraform operations
 via the `data\.terraform_remote_state <https://www.terraform.io/docs/language/state/remote-state-data.html>`_
-data source. This section examines the **terraform-worker** concepts of :ref:`rendering`, :ref:`definitions`,
+data source. This section examines **terraform-worker** concepts of :ref:`rendering`, :ref:`definitions`,
 :ref:`terraform-vars`, :ref:`remote-vars`, and :ref:`provider-configurations`.
 
 .. contents:: On this page

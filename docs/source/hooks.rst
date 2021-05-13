@@ -6,16 +6,15 @@ Hooks
 .. index::
    single: hooks
 
-Hooks are executable "cut-in" points that are available to a user during the course of executing a **terraform-worker**
+Hooks are executable "cut-in" points that are available to a user during the execution a **terraform-worker**
 configuration.  The hooks mechanism allows a user to insert an execuatable script in a ``hooks`` directory in a
-**terraform-worker** definition.  The name of the hook should correspond to the ``pre`` or ``post`` event that the
-script should target.
+**terraform-worker** :ref:`filesystem definition <filesystem-definition>`.  The name of the hook should correspond
+to the ``pre`` or ``post`` event that the script should target.
 
-Hooks are discovered in a `./hooks` directory in a :ref:`filesystem-definition`. For routing a hook script to the proper
-interpreter, **terraform-worker** relies on the filesystem's underlying mechanism (`the shebang, for example, on \*nix
-systems`). Hook scripts should be named for the event that they target, ignoring the extension. So, a python hook script
-running on a \*nix system targeting the ``post_apply`` event might be named: ``post_apply.py`` and might include
-``#!/usr/bin/env python3`` on the first line.
+For routing a hook script to the proper interpreter, **terraform-worker** relies on the filesystem's underlying
+mechanism (`the shebang, for example, on \*nix systems`). A hook script should be named for the event that it
+targets, ignoring the extension. So, a python hook script running on a \*nix system targeting the ``post_apply``
+event might be named: ``post_apply.py`` and might include ``#!/usr/bin/env python3`` on the first line.
 
 .. note:: Definition file structure with hooks.
 
@@ -33,7 +32,7 @@ Events
 ------
 
 The **terraform-worker** provides event-based entry points for executing operations outside of terraform.  The following
-list shows each of the hook events that the **terraform-worker** supports.
+list shows each of the hook events that **terraform-worker** supports.
 
  * ``pre_plan``
  * ``post_plan``
