@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import collections
+import click
 
 
 class OptionsCollection(collections.abc.Mapping):
@@ -30,6 +31,9 @@ class OptionsCollection(collections.abc.Mapping):
 
     def __iter__(self):
         return iter(self._options.values())
+
+    def __repr__(self):
+        return str(self.__dict__)
 
     @staticmethod
     def merge(rootc, **kwargs):

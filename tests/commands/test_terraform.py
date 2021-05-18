@@ -21,7 +21,7 @@ from unittest import mock
 
 import pytest
 from pytest_lazyfixture import lazy_fixture
-from tfworker.commands.terraform import TerraformCommand
+from tfworker.commands.terraform import BaseCommand
 
 
 # context manager to allow testing exceptions in parameterized tests
@@ -183,13 +183,11 @@ class TestTerraformCommand:
         self, stdout: str, major: int, minor: int, expected_exception: callable
     ):
         with mock.patch(
-            "tfworker.commands.terraform.pipe_exec",
+            "tfworker.commands.base.pipe_exec",
             side_effect=mock_tf_version,
         ) as mocked:
             with expected_exception:
-                (actual_major, actual_minor) = TerraformCommand.get_terraform_version(
-                    stdout
-                )
+                (actual_major, actual_minor) = BaseCommand.get_terraform_version(stdout)
                 assert actual_major == major
                 assert actual_minor == minor
                 mocked.assert_called_once()

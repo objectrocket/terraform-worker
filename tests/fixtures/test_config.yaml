@@ -1,4 +1,10 @@
 terraform:
+  worker_options:
+    aws_access_key_id: AABCVFHEHGFHD
+    aws_secret_access_key: sldkfjlsdkfjl
+    backend: s3
+    backend_bucket: test_bucket_from_config
+
   providers:
     aws:
       vars:

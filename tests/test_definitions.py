@@ -26,7 +26,7 @@ EXPECTED_TEST_BLOCK = """resource "null_resource" "test_a" {
 EXPECTED_TF_BLOCK = """terraform {
   backend "s3" {
     region = "us-west-2"
-    bucket = "test_bucket"
+    bucket = "test_bucket_from_config"
     key = "terraform/test-0001/test/terraform.tfstate"
     dynamodb_table = "terraform-test-0001"
     encrypt = "true"
@@ -66,6 +66,8 @@ class TestDefinitions:
         assert os.path.isfile(basec.temp_dir + "/definitions/test/terraform.tf")
         with open(basec.temp_dir + "/definitions/test/terraform.tf", "r") as reader:
             tf_data = reader.read()
+            print(expected_tf_block)
+            print(tf_data)
             assert expected_tf_block in tf_data
             for ep in expected_providers:
                 assert f'provider "{ep}" {{' in tf_data

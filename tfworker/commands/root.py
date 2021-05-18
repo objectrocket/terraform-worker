@@ -35,16 +35,12 @@ class RootCommand:
         self.clean = clean
         self.temp_dir = tempfile.mkdtemp()
         self.args = self.StateArgs()
-        self.config_file = None
+        self.config_file = args.get("config_file")
 
         # Config accessors
         self.tf = None
         self._pullup_keys()
         self.add_args(args)
-
-        if args.get("config_file") and args.get("backend"):
-            click.secho(f"loading config file {args.get('config_file')}", fg="green")
-            self.config_file = args.get("config_file")
 
     def __del__(self):
         """Cleanup the temporary directory after execution."""
@@ -93,6 +89,7 @@ class RootCommand:
             # directly on self object
             self.tf = self.config.get("terraform", OrderedDict())
             self._pullup_keys()
+            self._merge_args()
         except jinja2.exceptions.TemplateNotFound as e:
             path = pathlib.Path(self.config_file).parents[0]
             click.secho(f"can not read template file: {path}/{e}", fg="red")
@@ -119,6 +116,10 @@ class RootCommand:
                 setattr(self, f"{k}_odict", self.tf.get(k, OrderedDict()))
             else:
                 setattr(self, f"{k}_odict", None)
+
+    def _merge_args(self):
+        for k, v in self.worker_options_odict.items():
+            self.add_arg(k, v)
 
     class StateArgs:
         """A class to hold arguments in the state for easier access."""

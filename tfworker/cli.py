@@ -166,7 +166,7 @@ def validate_host():
 )
 @click.option(
     "--backend-region",
-    default=const.DEFAULT_BACKEND_REGION,
+    default=const.DEFAULT_AWS_REGION,
     help="Region where terraform rootc/lock bucket exists",
 )
 @click.option(
