@@ -27,7 +27,7 @@ from tfworker.util.system import pipe_exec
 class BaseCommand:
     def __init__(self, rootc, deployment="undefined", limit=tuple(), **kwargs):
         self._rootc = rootc
-        self._args_dict = kwargs
+        self._args_dict = {}
         self._version = None
         self._providers = None
         self._definitions = None
@@ -41,11 +41,11 @@ class BaseCommand:
         rootc.add_arg("deployment", deployment)
         rootc.load_config()
 
-        self._terraform_bin = self._resolve_arg("terraform_bin")
         (self._tf_version_major, self._tf_version_minor) = self._resolve_arg(
             "tf_version"
         ) or (None, None)
 
+        self._terraform_bin = self._resolve_arg("terraform_bin")
         if self._tf_version_major is None or self._tf_version_minor is None:
             (
                 self._tf_version_major,
@@ -57,6 +57,7 @@ class BaseCommand:
         )
 
         rootc.clean = kwargs.get("clean", True)
+
         self._providers = ProvidersCollection(
             rootc.providers_odict, self._authenticators, self._tf_version_major
         )

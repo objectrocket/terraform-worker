@@ -1,4 +1,14 @@
 terraform:
+  worker_options:
+    aws_access_key_id: AABCVFHEHGFHD
+    aws_secret_access_key: sldkfjlsdkfjl
+    b64_encode: true
+    backend: s3
+    backend_bucket: test_bucket_from_config
+    backend_prefix: test_root
+    deployment: alphabet-soup
+    terraform_bin: /home/test/bin/terraform
+
   providers:
     aws:
       vars:

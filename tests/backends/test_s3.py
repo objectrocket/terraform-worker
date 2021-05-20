@@ -17,7 +17,7 @@ import string
 import pytest
 from tfworker.backends.base import BackendError
 
-STATE_BUCKET = "test_bucket_from_config"
+STATE_BUCKET = "test_bucket"
 STATE_PREFIX = "terraform"
 STATE_REGION = "us-west-2"
 STATE_DEPLOYMENT = "test-0001"
@@ -178,7 +178,7 @@ def test_s3_hcl(basec):
     render = basec.backend.hcl("test")
     expected_render = """  backend "s3" {
     region = "us-west-2"
-    bucket = "test_bucket_from_config"
+    bucket = "test_bucket"
     key = "terraform/test-0001/test/terraform.tfstate"
     dynamodb_table = "terraform-test-0001"
     encrypt = "true"
@@ -191,7 +191,7 @@ def test_s3_data_hcl(basec):
   backend = "s3"
   config = {
     region = "us-west-2"
-    bucket = "test_bucket_from_config"
+    bucket = "test_bucket"
     key = "terraform/test-0001/test/terraform.tfstate"
   }
 }

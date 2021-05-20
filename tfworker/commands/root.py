@@ -39,7 +39,6 @@ class RootCommand:
 
         # Config accessors
         self.tf = None
-        self._pullup_keys()
         self.add_args(args)
 
     def __del__(self):

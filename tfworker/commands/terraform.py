@@ -38,7 +38,6 @@ class TerraformError(Exception):
 
 class TerraformCommand(BaseCommand):
     def __init__(self, rootc, **kwargs):
-        click.secho(f"kwargs: {kwargs}")
         super(TerraformCommand, self).__init__(rootc, **kwargs)
 
         self._destroy = self._resolve_arg("destroy")
