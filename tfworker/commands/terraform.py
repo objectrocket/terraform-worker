@@ -51,7 +51,6 @@ class TerraformCommand(BaseCommand):
         self._deployment = self._resolve_arg("deployment")
         self._force = self._resolve_arg("force")
         self._show_output = self._resolve_arg("show_output")
-        click.secho(f"terraform bin: {self._terraform_bin}", fg="bright_blue")
         self._terraform_modules_dir = self._resolve_arg("terraform_modules_dir")
 
     @property
