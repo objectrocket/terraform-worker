@@ -27,7 +27,9 @@ from tfworker.util.system import pipe_exec
 class BaseCommand:
     def __init__(self, rootc, deployment="undefined", limit=tuple(), **kwargs):
         self._rootc = rootc
-        self._args_dict = {}
+        self._args_dict = dict(kwargs)
+        self._args_dict.update(self._rootc.args.__dict__)
+
         self._version = None
         self._providers = None
         self._definitions = None
@@ -89,7 +91,7 @@ class BaseCommand:
             plugins_odict, self._temp_dir, self._tf_version_major
         )
         self._backend = select_backend(
-            rootc.args.backend,
+            self._resolve_arg("backend"),
             deployment,
             self._authenticators,
             self._definitions,
@@ -129,8 +131,12 @@ class BaseCommand:
         2) Config file
         """
         if name in self._args_dict:
+            if name == "backend":
+                print("ah ha")
             return self._args_dict[name]
         if name in self._rootc.worker_options_odict:
+            if name == "backend":
+                print("bah ha")
             return self._rootc.worker_options_odict[name]
         return None
 

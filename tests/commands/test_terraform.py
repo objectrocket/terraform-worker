@@ -193,8 +193,12 @@ class TestTerraformCommand:
                 mocked.assert_called_once()
 
     def test_worker_options(self, tf_13cmd_options):
-        assert tf_13cmd_options._terraform_bin == "/home/test/bin/terraform"
-
         # Verify that the options from the CLI override the options from the config
-        assert tf_13cmd_options.backend == "gcs"
-        assert tf_13cmd_options.tf.worker_options_odict.get("backend") == "s3"
+        assert tf_13cmd_options._rootc.worker_options_odict.get("backend") == "s3"
+        assert tf_13cmd_options.backend.tag == "gcs"
+
+        assert (
+            tf_13cmd_options._rootc.worker_options_odict.get("terraform_bin")
+            == "/home/test/bin/terraform"
+        )
+        assert tf_13cmd_options._terraform_bin == "/usr/local/bin/terraform"
