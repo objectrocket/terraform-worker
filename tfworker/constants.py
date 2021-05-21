@@ -20,7 +20,7 @@ _CWD = os.getcwd()
 DEFAULT_BACKEND_PREFIX = "terraform/state/{deployment}"
 DEFAULT_CONFIG = f"{_CWD}/worker.yaml"
 DEFAULT_REPOSITORY_PATH = _CWD
-DEFAULT_AWS_REGION = "us-east1"
-DEFAULT_GCP_REGION = "us-east1a"
+DEFAULT_AWS_REGION = "us-east-1"
+DEFAULT_GCP_REGION = "us-east-1a"
 
 RESERVED_FILES = ["terraform.tf", "worker-locals.tf", "worker.auto.tfvars"]

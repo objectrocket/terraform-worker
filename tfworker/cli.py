@@ -143,7 +143,6 @@ def validate_host():
 )
 @click.option(
     "--backend-bucket",
-    required=True,
     help="Bucket (must exist) where all terraform states are stored",
 )
 @click.option(

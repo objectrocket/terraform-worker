@@ -27,7 +27,7 @@ class AWSAuthenticator(BaseAuthenticator):
         super(AWSAuthenticator, self).__init__(state_args, **kwargs)
 
         self.access_key_id = self._resolve_arg("aws_access_key_id")
-        self.backend_region = self._resolve_arg("backend_region")
+        self.backend_region = self._resolve_arg("aws_region")
         self.bucket = self._resolve_arg("backend_bucket")
         self.prefix = self._resolve_arg("backend_prefix")
         self.profile = self._resolve_arg("aws_profile")

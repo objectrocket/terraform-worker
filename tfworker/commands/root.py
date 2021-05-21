@@ -129,6 +129,9 @@ class RootCommand:
         def __getitem__(self, name):
             return self.__dict__[name]
 
+        def __repr__(self):
+            return str(self.__dict__)
+
         def keys(self):
             return self.__dict__.keys()
 

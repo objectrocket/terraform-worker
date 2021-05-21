@@ -71,12 +71,12 @@ class BaseCommand:
         self._providers = ProvidersCollection(
             rootc.providers_odict, self._authenticators, self._tf_version_major
         )
-        plan_for = "destroy" if self._resolve_arg("destroy") else "apply"
+        self._plan_for = "destroy" if self._resolve_arg("destroy") else "apply"
         self._definitions = DefinitionsCollection(
             rootc.definitions_odict,
             deployment,
             limit,
-            plan_for,
+            self._plan_for,
             self._providers,
             self._repository_path,
             rootc,
@@ -138,7 +138,7 @@ class BaseCommand:
         1) CLI argument
         2) Config file
         """
-        if name in self._args_dict:
+        if name in self._args_dict and self._args_dict[name]:
             return self._args_dict[name]
         if name in self._rootc.worker_options_odict:
             return self._rootc.worker_options_odict[name]
