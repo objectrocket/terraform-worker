@@ -68,7 +68,7 @@ terraform:
     backend: s3
     backend_prefix: tfstate
     terraform_bin: /home/user/bin/terraform
- % worker
+ % worker terraform my-deploy
 ```
 
 ## Development
