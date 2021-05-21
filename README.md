@@ -54,6 +54,23 @@ terraform:
 ...
 ```
 
+**terraform-worker** requires a configuration file.  By default, it will looks for a file named "worker.yaml" in the
+current working directory.  Together with the `worker_options` listed above, it's possible to specify all options 
+either in the environment or in the configuration file and simply call the worker command by itself.
+
+```sh
+ % env | grep AWS
+ AWS_ACCESS_KEY_ID=somekey
+ AWS_SECRET_ACCESS_KEY=somesecret
+ % head ./worker.yaml
+terraform:
+  worker_options:
+    backend: s3
+    backend_prefix: tfstate
+    terraform_bin: /home/user/bin/terraform
+ % worker
+```
+
 ## Development
 
 ```sh
