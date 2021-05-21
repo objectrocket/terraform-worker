@@ -21,7 +21,11 @@ from tfworker.backends import select_backend
 from tfworker.definitions import DefinitionsCollection
 from tfworker.plugins import PluginsCollection
 from tfworker.providers import ProvidersCollection
-from tfworker.util.system import pipe_exec
+from tfworker.util.system import pipe_exec, which
+
+
+class MissingDependencyException(Exception):
+    pass
 
 
 class BaseCommand:
@@ -47,7 +51,11 @@ class BaseCommand:
             "tf_version"
         ) or (None, None)
 
-        self._terraform_bin = self._resolve_arg("terraform_bin")
+        self._terraform_bin = self._resolve_arg("terraform_bin") or which("terraform")
+        if not self._terraform_bin:
+            raise MissingDependencyException(
+                "Cannot find terraform in arguments or on PATH"
+            )
         if self._tf_version_major is None or self._tf_version_minor is None:
             (
                 self._tf_version_major,
@@ -131,12 +139,8 @@ class BaseCommand:
         2) Config file
         """
         if name in self._args_dict:
-            if name == "backend":
-                print("ah ha")
             return self._args_dict[name]
         if name in self._rootc.worker_options_odict:
-            if name == "backend":
-                print("bah ha")
             return self._rootc.worker_options_odict[name]
         return None
 

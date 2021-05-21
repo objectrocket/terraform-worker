@@ -26,7 +26,7 @@ terraform:
 ```
 
 ```sh
-% worker --aws-profile default --backend s3 terraform --show-output example1
+% worker --aws-profile default --backend s3 terraform example1
 ```
 **NOTE:** When adding a provider from a non-hashicorp source, use a `source` field, as follows
 (_the `source` field is only valid for terraform 13+ and is not emitted when using 12_):
@@ -38,6 +38,20 @@ providers:
     vars:
       version: "~> 1.9"
     source: "gavinbunney/kubectl"
+```
+
+In addition to using command line options, worker configuration can be specified using a `worker_options` section in
+the worker configuration.
+
+```yaml
+terraform:
+  worker_options:
+    backend: s3
+    backend_prefix: tfstate
+    terraform_bin: /home/user/bin/terraform
+
+  providers:
+...
 ```
 
 ## Development

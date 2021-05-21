@@ -197,8 +197,10 @@ class TestTerraformCommand:
         assert tf_13cmd_options._rootc.worker_options_odict.get("backend") == "s3"
         assert tf_13cmd_options.backend.tag == "gcs"
 
-        assert (
-            tf_13cmd_options._rootc.worker_options_odict.get("terraform_bin")
-            == "/home/test/bin/terraform"
-        )
-        assert tf_13cmd_options._terraform_bin == "/usr/local/bin/terraform"
+        # Verify that None options are overriden by the config
+        assert tf_13cmd_options._rootc.worker_options_odict.get("b64_encode") is True
+        assert tf_13cmd_options._args_dict.get("b64_encode") is False
+
+        # The fixture causes which to return /usr/local/bin/terraform.  However, since the
+        # path is specified in the worker_options, assert the value fromt he config.
+        assert tf_13cmd_options._terraform_bin == "/home/test/bin/terraform"
