@@ -16,6 +16,7 @@ import json
 from contextlib import closing
 
 import boto3
+import botocore
 import click
 
 from .base import BackendError, BaseBackend, validate_backend_empty
@@ -55,6 +56,20 @@ class S3Backend(BaseBackend):
             )
             self._create_table(locking_table_name)
 
+        # Initialize s3 client and create bucket if necessary. Op should create if
+        # not exists
+        self._s3_client = self._authenticator.backend_session.client("s3")
+        try:
+            self._s3_client.create_bucket(
+                Bucket=self._authenticator.bucket,
+                CreateBucketConfiguration={
+                    "LocationConstraint": self._authenticator.region
+                },
+            )
+        except botocore.exceptions.ClientError as err:
+            if "BucketAlreadyExists" not in str(err):
+                raise err
+
     def _check_table_exists(self, name: str) -> bool:
         """ check if a supplied dynamodb table exists """
         if name in self._ddb_client.list_tables()["TableNames"]:
@@ -69,10 +84,7 @@ class S3Backend(BaseBackend):
         optionally definition can be passed to limit the cleanup
         to a single definition
         """
-        s3_paginator = self._authenticator.backend_session.client("s3").get_paginator(
-            "list_objects_v2"
-        )
-        s3_client = self._authenticator.backend_session.client("s3")
+        s3_paginator = self._s3_client.get_paginator("list_objects_v2")
 
         if definition is None:
             prefix = self._authenticator.prefix
@@ -82,7 +94,7 @@ class S3Backend(BaseBackend):
         for s3_object in self.filter_keys(
             s3_paginator, self._authenticator.bucket, prefix
         ):
-            backend_file = s3_client.get_object(
+            backend_file = self._s3_client.get_object(
                 Bucket=self._authenticator.bucket, Key=s3_object
             )
             body = backend_file["Body"]
@@ -149,8 +161,7 @@ class S3Backend(BaseBackend):
         note: in initial testing this isn't required, but is inconsistent with how S3 delete markers, and the boto
         delete object call work there may be some configurations that require extra handling.
         """
-        s3_client = self._authenticator.backend_session.client("s3")
-        s3_client.delete_object(Bucket=self._authenticator.bucket, Key=key)
+        self._s3_client.delete_object(Bucket=self._authenticator.bucket, Key=key)
 
     def clean(self, deployment: str, limit: tuple = None) -> None:
         """
