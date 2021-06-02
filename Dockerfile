@@ -17,5 +17,12 @@ RUN apt update 2>/dev/null && \
     apt remove -y wget unzip 2>/dev/null && \
     rm -rf /var/lib/apt/lists/*
 
-WORKDIR /
+ENV USER=orwork
+RUN addgroup --gid 1000 ${USER} && \
+    adduser --uid 1000 --gecos "${USER} user" --gid 1000 --disabled-password ${USER} && \
+    chown -R ${USER}:${USER} /home/orwork
+
+USER ${USER}:${USER}
+
+WORKDIR /home/${USER}
 ENTRYPOINT [ "/bin/bash" ]
