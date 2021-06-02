@@ -67,7 +67,17 @@ class S3Backend(BaseBackend):
                 },
             )
         except botocore.exceptions.ClientError as err:
-            if "BucketAlreadyExists" not in str(err):
+            err_str = str(err)
+            if "BucketAlreadyExists" or "BucketAlreadyOwnedByYou" in err_str:
+                pass
+            elif "InvalidLocationConstraint" in err_str:
+                click.secho(
+                    "InvalidLocationConstraint raised when trying to create a bucket. "
+                    "Verify the AWS Region passed to the worker matches the AWS region "
+                    "in the profile.",
+                    fg="red",
+                )
+            else:
                 raise err
 
     def _check_table_exists(self, name: str) -> bool:
