@@ -65,20 +65,38 @@ class S3Backend(BaseBackend):
                 CreateBucketConfiguration={
                     "LocationConstraint": self._authenticator.region
                 },
+                ACL="private",
             )
         except botocore.exceptions.ClientError as err:
             err_str = str(err)
-            if "BucketAlreadyExists" or "BucketAlreadyOwnedByYou" in err_str:
-                pass
-            elif "InvalidLocationConstraint" in err_str:
+            if "InvalidLocationConstraint" in err_str:
                 click.secho(
                     "InvalidLocationConstraint raised when trying to create a bucket. "
                     "Verify the AWS Region passed to the worker matches the AWS region "
                     "in the profile.",
                     fg="red",
                 )
-            else:
+            elif (
+                "BucketAlreadyExists" not in err_str
+                and "BucketAlreadyOwnedByYou" not in err_str
+            ):
                 raise err
+
+        # Block public access
+        self._s3_client.put_public_access_block(
+            Bucket=self._authenticator.bucket,
+            PublicAccessBlockConfiguration={
+                "BlockPublicAcls": True,
+                "IgnorePublicAcls": True,
+                "BlockPublicPolicy": True,
+                "RestrictPublicBuckets": True,
+            },
+        )
+
+        # Enable versioning on the bucket
+        s3_resource = self._authenticator.backend_session.resource("s3")
+        versioning = s3_resource.BucketVersioning(self._authenticator.bucket)
+        versioning.enable()
 
     def _check_table_exists(self, name: str) -> bool:
         """ check if a supplied dynamodb table exists """
