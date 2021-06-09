@@ -100,7 +100,7 @@ class MockAWSAuth:
 
     def __init__(self):
         self._session = boto3.Session()
-        self.bucket = f"test_bucket{str(time.time()).replace('.', '')}"
+        self.bucket = "test_bucket"
         self.prefix = "terraform/test-0001"
 
     @property
@@ -109,12 +109,12 @@ class MockAWSAuth:
 
 
 @pytest.fixture()
-def grootc(bucketname):
+def grootc():
     result = tfworker.commands.root.RootCommand(
         args={
             "backend": "gcs",
             "backend_region": "us-central1",
-            "backend_bucket": bucketname,
+            "backend_bucket": "test_gcp_bucket",
             "backend_prefix": "terraform/test-0002",
             "config_file": os.path.join(
                 os.path.dirname(__file__), "fixtures", "gcp_test_config.yaml"
@@ -130,7 +130,7 @@ def grootc(bucketname):
 
 @pytest.fixture(scope="function")
 @mock.patch("tfworker.authenticators.aws.AWSAuthenticator", new=MockAWSAuth)
-def rootc(s3_client, dynamodb_client, sts_client, bucketname):
+def rootc(s3_client, dynamodb_client, sts_client):
     result = tfworker.commands.root.RootCommand(
         args={
             "aws_access_key_id": "1234567890",
@@ -138,7 +138,7 @@ def rootc(s3_client, dynamodb_client, sts_client, bucketname):
             "aws_region": "us-west-2",
             "backend": "s3",
             "backend_region": "us-west-2",
-            "backend_bucket": bucketname,
+            "backend_bucket": "test_bucket",
             "backend_prefix": "terraform/test-0001",
             "config_file": os.path.join(
                 os.path.dirname(__file__), "fixtures", "test_config.yaml"
@@ -162,7 +162,7 @@ def json_base_rootc(s3_client, dynamodb_client, sts_client):
             "aws_region": "us-west-2",
             "backend": "s3",
             "backend_region": "us-west-2",
-            "backend_bucket": bucketname,
+            "backend_bucket": "test_bucket",
             "backend_prefix": "terraform/test-0001",
             "config_file": os.path.join(
                 os.path.dirname(__file__), "fixtures", "base_config_test.json"
@@ -186,7 +186,7 @@ def yaml_base_rootc(s3_client, dynamodb_client, sts_client):
             "aws_region": "us-west-2",
             "backend": "s3",
             "backend_region": "us-west-2",
-            "backend_bucket": bucketname,
+            "backend_bucket": "test_bucket",
             "backend_prefix": "terraform/test-0001",
             "config_file": os.path.join(
                 os.path.dirname(__file__), "fixtures", "base_config_test.yaml"
@@ -210,7 +210,7 @@ def hcl_base_rootc(s3_client, dynamodb_client, sts_client):
             "aws_region": "us-west-2",
             "backend": "s3",
             "backend_region": "us-west-2",
-            "backend_bucket": bucketname,
+            "backend_bucket": "test_bucket",
             "backend_prefix": "terraform/test-0001",
             "config_file": os.path.join(
                 os.path.dirname(__file__), "fixtures", "base_config_test.hcl"
@@ -239,7 +239,7 @@ def rootc_options(s3_client, dynamodb_client, sts_client):
             "aws_region": "us-east-2",
             "backend": "gcs",
             "backend_region": "us-west-2",
-            "backend_bucket": bucketname,
+            "backend_bucket": "test_bucket",
             "backend_prefix": "terraform/test-0001",
             "config_file": os.path.join(
                 os.path.dirname(__file__), "fixtures", "test_config_with_options.yaml"
@@ -263,12 +263,9 @@ def basec(rootc, s3_client):
             "tfworker.commands.base.which",
             side_effect=lambda x: "/usr/local/bin/terraform",
         ):
-            with mock.patch("botocore.errorfactory.ClientError"):
-                bc = tfworker.commands.base.BaseCommand(
-                    rootc, "test-0001", tf_version_major=13
-                )
-                print(bc)
-                return bc
+            return tfworker.commands.base.BaseCommand(
+                rootc, "test-0001", tf_version_major=13
+            )
 
 
 @pytest.fixture

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+import os
 from contextlib import closing
 
 import boto3
@@ -76,6 +77,9 @@ class S3Backend(BaseBackend):
                     "in the profile.",
                     fg="red",
                 )
+            elif "BucketAlreadyExists" in err_str:
+                if "PYTEST_CURRENT_TEST" not in os.environ:
+                    raise err
             elif "BucketAlreadyOwnedByYou" not in err_str:
                 raise err
 

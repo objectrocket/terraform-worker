@@ -174,27 +174,27 @@ def test_backend_clean_limit(basec, request, state_setup, dynamodb_client, s3_cl
     assert basec.backend.clean(STATE_DEPLOYMENT, limit=["empty"]) is None
 
 
-def test_s3_hcl(basec, bucketname):
+def test_s3_hcl(basec):
     render = basec.backend.hcl("test")
-    expected_render = f"""  backend "s3" {{
+    expected_render = """  backend "s3" {
     region = "us-west-2"
-    bucket = "{bucketname}"
+    bucket = "test_bucket"
     key = "terraform/test-0001/test/terraform.tfstate"
     dynamodb_table = "terraform-test-0001"
     encrypt = "true"
-  }}"""
+  }"""
     assert render == expected_render
 
 
-def test_s3_data_hcl(basec, bucketname):
-    expected_render = f"""data "terraform_remote_state" "test" {{
+def test_s3_data_hcl(basec):
+    expected_render = """data "terraform_remote_state" "test" {
   backend = "s3"
-  config = {{
+  config = {
     region = "us-west-2"
-    bucket = "{bucketname}"
+    bucket = "test_bucket"
     key = "terraform/test-0001/test/terraform.tfstate"
-  }}
-}}
+  }
+}
 """
     render = []
     render.append(basec.backend.data_hcl(["test", "test"]))
