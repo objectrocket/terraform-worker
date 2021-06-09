@@ -16,7 +16,6 @@ import collections
 import os
 import random
 import string
-import time
 from unittest import mock
 
 import boto3
@@ -27,11 +26,6 @@ import tfworker.commands.root
 import tfworker.providers
 from moto import mock_dynamodb2, mock_s3, mock_sts
 from pytest_lazyfixture import lazy_fixture
-
-
-@pytest.fixture
-def bucketname():
-    return f"test_bucket{str(time.time()).replace('.', '_')}"
 
 
 @pytest.fixture
