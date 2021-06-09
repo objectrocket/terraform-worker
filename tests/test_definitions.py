@@ -23,15 +23,15 @@ EXPECTED_TEST_BLOCK = """resource "null_resource" "test_a" {
 }
 """
 
-EXPECTED_TF_BLOCK = """terraform {
-  backend "s3" {
+EXPECTED_TF_BLOCK = """terraform {{
+  backend "s3" {{
     region = "us-west-2"
-    bucket = "test_bucket"
+    bucket = "{0}"
     key = "terraform/test-0001/test/terraform.tfstate"
     dynamodb_table = "terraform-test-0001"
     encrypt = "true"
-  }
-}"""
+  }}
+}}"""
 
 
 EXPECTED_VARS_BLOCK = """vpc_cidr = "10.0.0.0/16"
@@ -47,15 +47,15 @@ map_map = {"map": {"list": ["x", "y", "z"]}}
 
 class TestDefinitions:
     @pytest.mark.parametrize(
-        "tf_version, expected_tf_block, expected_providers",
+        "tf_version, expected_providers",
         [
-            (15, EXPECTED_TF_BLOCK, ["google", "null"]),
-            (14, EXPECTED_TF_BLOCK, ["google", "null"]),
-            (13, EXPECTED_TF_BLOCK, ["google", "null"]),
-            (12, EXPECTED_TF_BLOCK, ["aws", "google", "google_beta", "null", "vault"]),
+            (15, ["google", "null"]),
+            (14, ["google", "null"]),
+            (13, ["google", "null"]),
+            (12, ["aws", "google", "google_beta", "null", "vault"]),
         ],
     )
-    def test_prep(self, basec, tf_version, expected_tf_block, expected_providers):
+    def test_prep(self, basec, tf_version, expected_providers, bucketname):
         definition = basec.definitions["test"]
         definition._tf_version_major = tf_version
         definition.prep(basec.backend)
@@ -66,7 +66,7 @@ class TestDefinitions:
         assert os.path.isfile(basec.temp_dir + "/definitions/test/terraform.tf")
         with open(basec.temp_dir + "/definitions/test/terraform.tf", "r") as reader:
             tf_data = reader.read()
-            assert expected_tf_block in tf_data
+            assert EXPECTED_TF_BLOCK.format(bucketname) in tf_data
             for ep in expected_providers:
                 assert f'provider "{ep}" {{' in tf_data
         assert os.path.isfile(basec.temp_dir + "/definitions/test/worker.auto.tfvars")

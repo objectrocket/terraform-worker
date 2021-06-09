@@ -170,25 +170,25 @@ class TestClean:
             assert gbasec.backend._parse_gcs_items(inval) == outval
 
 
-def test_google_hcl(gbasec):
+def test_google_hcl(gbasec, bucketname):
     render = gbasec.backend.hcl("test")
-    expected_render = """  backend "gcs" {
-    bucket = "test_gcp_bucket"
+    expected_render = f"""  backend "gcs" {{
+    bucket = "{bucketname}"
     prefix = "terraform/test-0002/test"
     credentials = "/home/test/test-creds.json"
-  }"""
+  }}"""
     assert render == expected_render
 
 
-def test_google_data_hcl(gbasec):
-    expected_render = """data "terraform_remote_state" "test" {
+def test_google_data_hcl(gbasec, bucketname):
+    expected_render = f"""data "terraform_remote_state" "test" {{
   backend = "gcs"
-  config = {
-    bucket = "test_gcp_bucket"
+  config = {{
+    bucket = "{bucketname}"
     prefix = "terraform/test-0002/test"
     credentials = "/home/test/test-creds.json"
-  }
-}"""
+  }}
+}}"""
     render = []
     render.append(gbasec.backend.data_hcl(["test", "test"]))
     render.append(gbasec.backend.data_hcl(["test"]))
