@@ -14,6 +14,7 @@
 
 import json
 import os
+import sys
 from contextlib import closing
 
 import boto3
@@ -78,8 +79,10 @@ class S3Backend(BaseBackend):
                     fg="red",
                 )
             elif "BucketAlreadyExists" in err_str:
+                # Ignore when testing
                 if "PYTEST_CURRENT_TEST" not in os.environ:
-                    raise err
+                    click.secho(err_str, fg="red")
+                    sys.exit(4)
             elif "BucketAlreadyOwnedByYou" not in err_str:
                 raise err
 
