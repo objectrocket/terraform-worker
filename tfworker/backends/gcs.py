@@ -49,12 +49,16 @@ class GCSBackend(BaseBackend):
                 )
 
             try:
-                self._storage_client.get_bucket(self._gcs_bucket)
+                b = self._storage_client.get_bucket(self._gcs_bucket)
+                print(f'Got bucket {b}')
             except NotFound:
-                try:
-                    self._storage_client.create_bucket(self._gcs_bucket)
-                except Conflict:
-                    pass
+                if self._authenticator.create_backend_bucket:
+                    try:
+                        self._storage_client.create_bucket(self._gcs_bucket)
+                    except Conflict:
+                        pass
+                else:
+                    raise BackendError("Backend bucket not found and --no-create-backend-bucket specified.")
 
     def _clean_deployment_limit(self, limit: tuple) -> None:
         """ only clean items within limit """
