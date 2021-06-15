@@ -49,8 +49,7 @@ class GCSBackend(BaseBackend):
                 )
 
             try:
-                b = self._storage_client.get_bucket(self._gcs_bucket)
-                print(f'Got bucket {b}')
+                self._storage_client.get_bucket(self._gcs_bucket)
             except NotFound:
                 if self._authenticator.create_backend_bucket:
                     try:

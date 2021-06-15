@@ -168,6 +168,7 @@ def rootc(s3_client, dynamodb_client, sts_client, create_backend_bucket=True):
     )
     return result
 
+
 @pytest.fixture(scope="function")
 @mock.patch("tfworker.authenticators.aws.AWSAuthenticator", new=MockAWSAuth)
 def rootc_no_create_backend_bucket(s3_client, dynamodb_client, sts_client):
@@ -307,6 +308,7 @@ def basec(rootc, s3_client):
             return tfworker.commands.base.BaseCommand(
                 rootc, "test-0001", tf_version_major=13
             )
+
 
 @pytest.fixture
 def gbasec(grootc):

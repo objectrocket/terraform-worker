@@ -236,7 +236,7 @@ class TestTerraformCommand:
                         "tfworker.backends.gcs.storage.Client.from_service_account_json"
                     ) as ClientMock:
                         instance = ClientMock.return_value
-                        instance.get_bucket.side_effect = NotFound(f"bucket not found")
+                        instance.get_bucket.side_effect = NotFound("bucket not found")
                         return tfworker.commands.base.BaseCommand(
                             grootc_no_create_backend_bucket, "test-0001", tf_version_major=13
                         )

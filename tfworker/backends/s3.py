@@ -23,6 +23,7 @@ import click
 
 from .base import BackendError, BaseBackend, validate_backend_empty
 
+
 class S3Backend(BaseBackend):
     tag = "s3"
     auth_tag = "aws"
@@ -108,7 +109,6 @@ class S3Backend(BaseBackend):
                 versioning.enable()
             else:
                 raise BackendError("Backend bucket not found and --no-create-backend-bucket specified.")
-
 
     def _check_table_exists(self, name: str) -> bool:
         """ check if a supplied dynamodb table exists """
